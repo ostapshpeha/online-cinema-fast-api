@@ -1,4 +1,4 @@
-import uuid
+import uuid as uuid_pkg
 from typing import List
 from sqlalchemy import (
     Table,
@@ -93,8 +93,8 @@ class Movie(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    uuid: Mapped[uuid.UUID] = mapped_column(
-        default=uuid.uuid4,
+    uuid: Mapped[uuid_pkg.UUID] = mapped_column(
+        default=uuid_pkg.uuid4,
         unique=True,
         nullable=False,
     )
