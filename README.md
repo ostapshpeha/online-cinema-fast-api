@@ -10,7 +10,7 @@ An online cinema is a digital platform that allows users to select, watch, and p
 Make sure that you have:
 * **Python 3.12**
 * **Docker & Docker Compose**
-* **Poetry** (`pip install poetry`)
+* **Poetry 2+** (`pip install poetry`)
 
 ### 2. Environment settings
 Clone repo:
@@ -33,18 +33,19 @@ Redis on port 6379
 ### 4. Docker + DB
 
 ```bash
-  docker-compose up -d
-  python -m poetry run alembic upgrade head
+  docker-compose up -d --build
+  docker exec -it cinema_app alembic upgrade head
+  docker exec -it cinema_app alembic revision --autogenerate -m "description" # after changes in models
+  docker exec -it cinema_app alembic current # check DB status after migration
 ```
 
-### 5. Run app
-
+### Before commit!!!
 ```bash
-  poetry run uvicorn src.main:app --reload
-```
+  poetry run ruff check .
+````
 
-The API will then be available at: http://127.0.0.1:8000 
-Swagger documentation: http://127.0.0.1:8000/docs
+The API will then be available at: http://localhost:8000
+Swagger documentation: http://localhost:8000/docs
 
 ### **Team Development and Workflow**
 Git Rules:

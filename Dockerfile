@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ENV POETRY_VERSION=1.8.2 \
+ENV POETRY_VERSION=2.0.1 \
     POETRY_VIRTUALENVS_CREATE=false \
     PYTHONPATH=/app
 
@@ -14,6 +14,8 @@ RUN pip install "poetry==$POETRY_VERSION"
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
+
+RUN poetry lock
 RUN poetry install --no-interaction --no-ansi --no-root
 
 COPY . .
