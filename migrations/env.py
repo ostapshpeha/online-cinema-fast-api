@@ -18,7 +18,7 @@ from src.movies.models import (
     Certification,
     movie_genres,
     movie_directors,
-    movie_stars
+    movie_stars,
 )
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
