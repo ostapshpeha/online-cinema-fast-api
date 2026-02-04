@@ -72,3 +72,59 @@ class Director(Base):
         secondary=movie_directors,
         back_populates="directors",
     )
+
+
+class Certification(Base):
+    __tablename__ = "certifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(unique=True, nullable=False)
+
+    movies: Mapped[List["Movie"]] = relationship(
+        back_populates="certification",
+    )
+
+
+class Movie(Base):
+    __tablename__ = "movies"
+    __table_args__ = (
+        UniqueConstraint("name", "year", "time", name="uq_movie_name_year_time"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    uuid: Mapped[uuid.UUID] = mapped_column(
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+
+    name: Mapped[str] = mapped_column(nullable=False)
+    year: Mapped[int] = mapped_column(nullable=False)
+    time: Mapped[int] = mapped_column(nullable=False)
+    imdb: Mapped[float] = mapped_column(nullable=False)
+    votes: Mapped[int] = mapped_column(nullable=False)
+
+    meta_score: Mapped[float | None]
+    gross: Mapped[float | None] = mapped_column(nullable=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    price: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=False)
+    certification_id: Mapped[int] = mapped_column(
+        ForeignKey("certifications.id"),
+        nullable=False,
+    )
+    certification: Mapped["Certification"] = relationship(
+        back_populates="movies",
+    )
+    genres: Mapped[List["Genre"]] = relationship(
+        secondary=movie_genres,
+        back_populates="movies",
+    )
+    directors: Mapped[List["Director"]] = relationship(
+        secondary=movie_directors,
+        back_populates="movies",
+    )
+    stars: Mapped[List["Star"]] = relationship(
+        secondary=movie_stars,
+        back_populates="movies",
+    )
