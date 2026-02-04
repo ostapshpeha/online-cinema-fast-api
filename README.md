@@ -30,10 +30,11 @@ PostgreSQL on port 5432
 
 Redis on port 6379
 
-### 4. Docker
+### 4. Docker + DB
 
 ```bash
   docker-compose up -d
+  python -m poetry run alembic upgrade head
 ```
 
 ### 5. Run app
