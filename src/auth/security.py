@@ -46,20 +46,12 @@ def create_access_token(user_id: int) -> str:
     """
     Create a new access token with a default or specified expiration time.
     """
-    expire = datetime.now() + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = datetime.now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode = {
-        "sub": str(user_id),
-        "exp": expire,
-        "type": "access"
-    }
+    to_encode = {"sub": str(user_id), "exp": expire, "type": "access"}
 
     encoded_jwt = jwt.encode(
-        to_encode,
-        settings.SECRET_KEY_ACCESS,
-        algorithm=settings.JWT_SIGNING_ALGORITHM
+        to_encode, settings.SECRET_KEY_ACCESS, algorithm=settings.JWT_SIGNING_ALGORITHM
     )
 
     return encoded_jwt
@@ -73,7 +65,7 @@ def decode_access_token(token: str) -> dict | None:
         payload = jwt.decode(
             token,
             settings.SECRET_KEY_ACCESS,
-            algorithms=[settings.JWT_SIGNING_ALGORITHM]
+            algorithms=[settings.JWT_SIGNING_ALGORITHM],
         )
 
         if payload.get("type") != "access":

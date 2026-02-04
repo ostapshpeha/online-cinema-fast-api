@@ -12,8 +12,8 @@ security = HTTPBearer()
 
 
 async def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        session: AsyncSession = Depends(get_async_session)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: AsyncSession = Depends(get_async_session),
 ) -> User:
     """
     Dependency get current user from JWT token.
@@ -49,21 +49,17 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    result = await session.execute(
-        select(User).where(User.id == user_id)
-    )
+    result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
 
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
         )
 
     return user
@@ -78,8 +74,8 @@ def require_role(*required_roles: UserGroupEnum):
     """
 
     async def role_checker(
-            current_user: User = Depends(get_current_user),
-            session: AsyncSession = Depends(get_async_session)
+        current_user: User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_async_session),
     ) -> User:
         if not current_user.group:
             result = await session.execute(
@@ -93,7 +89,7 @@ def require_role(*required_roles: UserGroupEnum):
         if user_role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions. Required roles: {allowed_roles}"
+                detail=f"Insufficient permissions. Required roles: {allowed_roles}",
             )
 
         return current_user
