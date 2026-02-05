@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -12,7 +12,7 @@ from src.auth.schemas import (
     UserCreate,
     UserResponse,
     TokenLoginResponseSchema,
-    UserRegistrationResponseSchema
+    UserRegistrationResponseSchema, TokenRefreshRequestSchema
 )
 from src.auth.security import (
     create_access_token,
@@ -204,7 +204,7 @@ async def activate_user(
     description="Rotate refresh token and issue a new access token",
 )
 async def refresh_access_token(
-    data: TokenLoginResponseSchema,
+    data: TokenRefreshRequestSchema,
     session: AsyncSession = Depends(get_async_session),
 ):
 
@@ -263,3 +263,21 @@ async def refresh_access_token(
         "refresh_token": new_refresh_value,
         "token_type": "bearer",
     }
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Logout",
+    description="Logout current user and revoke all refresh tokens",
+)
+async def logout(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    await session.execute(
+        delete(RefreshTokenModel)
+        .where(RefreshTokenModel.user_id == current_user.id)
+    )
+    await session.commit()
+
