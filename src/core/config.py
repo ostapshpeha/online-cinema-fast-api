@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     JWT_SIGNING_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    SENDGRID_API_KEY: str | None = None
+    EMAIL_FROM: str | None = None
+    EMAIL_ENABLED: bool = False
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
