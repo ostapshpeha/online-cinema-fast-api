@@ -1,21 +1,24 @@
-# from sendgrid import SendGridAPIClient
-# from sendgrid.helpers.mail import Mail
-# import os
-#
-#
-# def send_email(to_email: str, subject: str, content: str):
-#     message = Mail(
-#         from_email=os.getenv("SENDGRID_FROM_EMAIL"),
-#         to_emails=to_email,
-#         subject=subject,
-#         html_content=content,
-#     )
-#
-#     try:
-#         sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
-#         sg.send(message)
-#     except Exception as e:
-#         raise RuntimeError(f"SendGrid error: {e}")
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content
+from src.core.config import settings
+
+sg = sendgrid.SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
+
+
+def send_email(to_email: str, subject: str, content: str):
+    from_email = Email(settings.EMAIL_FROM)  # Change to your verified sender
+    to_email = To(to_email)  # Change to your recipient
+    subject = subject
+    content = Content("text/plain", content)
+    mail = Mail(from_email, to_email, subject, content)
+
+    # Get a JSON-ready representation of the Mail object
+    mail_json = mail.get()
+
+    # Send an HTTP POST request to /mail/send
+    response = sg.client.mail.send.post(request_body=mail_json)
+    print(response.status_code)
+    print(response.headers)
 
 
 # import httpx
