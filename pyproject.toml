@@ -25,7 +25,8 @@ dependencies = [
     "poetry-core (>=2.0.0)",
     "asyncpg (>=0.31.0)",
     "pydantic[email] (>=2.12.5,<3.0.0)",
-    "greenlet (>=3.3.1,<4.0.0)"
+    "greenlet (>=3.3.1,<4.0.0)",
+    "sendgrid (>=6.12.5,<7.0.0)"
 ]
 
 [build-system]
