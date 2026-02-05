@@ -36,4 +36,3 @@ class OrderItem(Base):
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"), nullable=False)
 
     price_at_order: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-
