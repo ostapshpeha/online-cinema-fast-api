@@ -28,6 +28,7 @@ from src.auth.security import (
 )
 from src.core.config import settings
 from src.core.database import get_async_session
+from src.notifications.email import send_email
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -85,8 +86,9 @@ async def register(
     activation_link = (
         f"http://localhost:8000/api/v1/auth/activate/{activation_token_value}"
     )
-    print(activation_link)
+    subject = "Movie cinema activate"
 
+    send_email(new_user.email, subject, activation_link)
     return UserRegistrationResponseSchema(
         id=new_user.id,
         email=new_user.email,
