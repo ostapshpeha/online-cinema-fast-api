@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_async_session
 from src.movies import crud, schemas
-from src.auth.dependencies import get_current_user, require_role
+from src.auth.dependencies import require_role
 from src.auth.models import User, UserGroupEnum
 
 

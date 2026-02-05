@@ -1,11 +1,11 @@
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 from fastapi import HTTPException, status
-from sqlalchemy import select, or_, func, desc, asc
+from sqlalchemy import select, or_, desc, asc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.movies.models import Movie, Genre, Director, Star, Certification
+from src.movies.models import Movie, Genre, Director, Star
 from src.movies.schemas import MovieCreate, MovieUpdate
 from src.orders.models import OrderItem, Order, OrderStatus
 
