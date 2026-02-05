@@ -7,7 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.dependencies import get_current_user
 from src.auth.models import User, UserGroup, UserGroupEnum, ActivationTokenModel
 from src.auth.schemas import LoginRequest, Token, UserCreate, UserResponse
-from src.auth.security import create_access_token, get_password_hash, verify_password, generate_secure_token
+from src.auth.security import (
+    create_access_token,
+    get_password_hash,
+    verify_password,
+    generate_secure_token,
+)
 from src.core.database import get_async_session
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -63,7 +68,6 @@ async def register(
     await session.commit()
     await session.refresh(new_user)
     token_value = generate_secure_token()
-
 
     activation_link = f"http://localhost:8000/api/v1/auth/activate/{token_value}"
     print(activation_link)
