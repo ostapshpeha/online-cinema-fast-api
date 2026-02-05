@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
 
-
     DATABASE_URL_ASYNC: str
 
     @property
@@ -22,5 +21,6 @@ class Settings(BaseSettings):
         )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
 
 settings = Settings()
