@@ -41,7 +41,7 @@ Clone repo:
 ````
 
 ```bash
-  docker-compose run --rm pytest
+  docker-compose -f docker-compose-tests.yml up --build
 ````
 
 The API will then be available at: http://localhost:8000
