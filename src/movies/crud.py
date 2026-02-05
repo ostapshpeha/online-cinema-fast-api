@@ -7,9 +7,37 @@ from sqlalchemy.orm import selectinload
 
 from src.movies.models import Movie, Genre, Director, Star, Certification
 from src.movies.schemas import MovieCreate, MovieUpdate
+from src.orders.models import OrderItem, Order, OrderStatus
 
+
+async def check_movie_purchased(
+    session: AsyncSession,
+    movie_id: int
+) -> bool:
+    """
+    Check whether a movie has been purchased in any paid order.
+    Returns True if the movie exists in at least one PAID order,
+    otherwise returns False.
+    """
+    stmt = (
+        select(OrderItem.id)
+        .join(Order)
+        .where(
+            OrderItem.movie_id == movie_id,
+            Order.status == OrderStatus.PAID
+        )
+        .limit(1)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none() is not None
 
 async def get_movie_by_id(session: AsyncSession, movie_id: int) -> Optional[Movie]:
+    """
+    Retrieve a movie by its ID with all related entities loaded.
+
+    Loads genres, directors, stars, and certification.
+    Returns None if the movie does not exist.
+    """
     query = (
         select(Movie)
         .where(Movie.id == movie_id)
@@ -23,7 +51,6 @@ async def get_movie_by_id(session: AsyncSession, movie_id: int) -> Optional[Movi
     result = await session.execute(query)
     return result.scalar_one_or_none()
 
-
 async def get_movies(
         session: AsyncSession,
         skip: int = 0,
@@ -32,6 +59,12 @@ async def get_movies(
         sort_by: Optional[str] = None,
         genre_id: Optional[int] = None
 ) -> Sequence[Movie]:
+    """
+    Retrieve a list of movies with optional filtering, searching, and sorting.
+
+    Supports pagination, text search, genre filtering, and multiple
+    sorting strategies (price, year, popularity).
+    """
     query = select(Movie).options(
         selectinload(Movie.genres),
         selectinload(Movie.directors),
@@ -66,12 +99,15 @@ async def get_movies(
     result = await session.execute(query)
     return result.scalars().all()
 
-
 async def create_movie(session: AsyncSession, movie_in: MovieCreate) -> Movie:
-    data = movie_in.model_dump(exclude={"genre_ids", "director_ids", "star_ids"})
+    """
+    Create a new movie and assign related genres, directors, and stars.
 
+    Raises HTTP 404 if any related entity does not exist.
+    Raises HTTP 400 if a unique constraint is violated.
+    """
+    data = movie_in.model_dump(exclude={"genre_ids", "director_ids", "star_ids"})
     new_movie = Movie(**data)
-    session.add(new_movie)
 
     if movie_in.genre_ids:
         genres_result = await session.execute(select(Genre).where(Genre.id.in_(movie_in.genre_ids)))
@@ -94,6 +130,8 @@ async def create_movie(session: AsyncSession, movie_in: MovieCreate) -> Movie:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="One or more stars not found")
         new_movie.stars = list(stars)
 
+    session.add(new_movie)
+
     try:
         await session.commit()
         await session.refresh(new_movie)
@@ -106,12 +144,17 @@ async def create_movie(session: AsyncSession, movie_in: MovieCreate) -> Movie:
 
     return await get_movie_by_id(session, new_movie.id)
 
-
 async def update_movie(
         session: AsyncSession,
         movie: Movie,
         movie_update: MovieUpdate
 ) -> Movie:
+    """
+    Update an existing movie and its related entities.
+
+    Only provided fields are updated.
+    Raises HTTP 404 if related entities are not found.
+    """
     update_data = movie_update.model_dump(exclude_unset=True)
 
     if "genre_ids" in update_data:
@@ -155,8 +198,16 @@ async def update_movie(
 
     return await get_movie_by_id(session, movie.id)
 
-
 async def delete_movie(session: AsyncSession, movie: Movie) -> None:
+    """
+    Delete a movie if it has not been purchased by any user.
 
+    Raises HTTP 400 if the movie exists in a paid order.
+    """
+    if await check_movie_purchased(session, movie.id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete movie: it has already been purchased by users."
+        )
     await session.delete(movie)
     await session.commit()
