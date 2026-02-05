@@ -9,7 +9,7 @@ class Cart(Base):
     __tablename__ = "carts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[uuid.UUID] = mapped_column(
+    user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), unique=True, nullable=False
     )
     items: Mapped[list["CartItem"]] = relationship(
