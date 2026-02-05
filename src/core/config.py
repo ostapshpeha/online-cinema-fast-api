@@ -22,8 +22,7 @@ class Settings(BaseSettings):
         )
 
     SECRET_KEY_ACCESS: str = Field(..., env="SECRET_KEY_ACCESS")
-    SECRET_KEY_REFRESH: str | None = Field(default=None,
-                                           env="SECRET_KEY_REFRESH")
+    SECRET_KEY_REFRESH: str | None = Field(default=None, env="SECRET_KEY_REFRESH")
 
     JWT_SIGNING_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

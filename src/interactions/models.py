@@ -33,8 +33,7 @@ class NotificationType(str, Enum):
 class Favorite(Base):
     __tablename__ = "favorites"
     __table_args__ = (
-        UniqueConstraint("user_id", "movie_id",
-                         name="uq_favorites_user_movie"),
+        UniqueConstraint("user_id", "movie_id", name="uq_favorites_user_movie"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -63,8 +62,7 @@ class Favorite(Base):
 class MovieReaction(Base):
     __tablename__ = "movie_reactions"
     __table_args__ = (
-        UniqueConstraint("user_id", "movie_id",
-                         name="uq_movie_reactions_user_movie"),
+        UniqueConstraint("user_id", "movie_id", name="uq_movie_reactions_user_movie"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -134,16 +132,14 @@ class Comment(Base):
     user = relationship("User", backref="comments")
     movie = relationship("Movie", backref="comments")
 
-    parent = relationship("Comment", remote_side="Comment.id",
-                          backref="replies")
+    parent = relationship("Comment", remote_side="Comment.id", backref="replies")
 
 
 class Rating(Base):
     __tablename__ = "ratings"
     __table_args__ = (
         UniqueConstraint("user_id", "movie_id", name="uq_ratings_user_movie"),
-        CheckConstraint("score >= 1 AND score <= 10",
-                        name="ck_ratings_score_1_10"),
+        CheckConstraint("score >= 1 AND score <= 10", name="ck_ratings_score_1_10"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -180,8 +176,9 @@ class Rating(Base):
 class Notification(Base):
     __tablename__ = "notifications"
     __table_args__ = (
-        CheckConstraint("recipient_user_id <> actor_user_id",
-                        name="ck_notification_no_self"),
+        CheckConstraint(
+            "recipient_user_id <> actor_user_id", name="ck_notification_no_self"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -209,8 +206,9 @@ class Notification(Base):
         nullable=False,
     )
 
-    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False,
-                                          server_default="false")
+    is_read: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -218,7 +216,8 @@ class Notification(Base):
         nullable=False,
     )
 
-    recipient = relationship("User", foreign_keys=[recipient_user_id],
-                             backref="notifications")
+    recipient = relationship(
+        "User", foreign_keys=[recipient_user_id], backref="notifications"
+    )
     actor = relationship("User", foreign_keys=[actor_user_id])
     comment = relationship("Comment")
