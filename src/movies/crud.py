@@ -1,12 +1,16 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 from fastapi import HTTPException, status
-from sqlalchemy import select, or_, desc, asc
+from sqlalchemy import select, or_, desc, asc, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.movies.models import Movie, Genre, Director, Star
-from src.movies.schemas import MovieCreate, MovieUpdate
+from src.movies.models import Movie, Genre, Director, Star, movie_genres
+from src.movies.schemas import (
+    MovieCreate, MovieUpdate,
+    GenreCreate, GenreUpdate,
+    StarCreate, StarUpdate
+)
 from src.orders.models import OrderItem, Order, OrderStatus
 
 
@@ -235,4 +239,73 @@ async def delete_movie(session: AsyncSession, movie: Movie) -> None:
             detail="Cannot delete movie: it has already been purchased by users.",
         )
     await session.delete(movie)
+    await session.commit()
+
+
+async def get_genres_with_counts(
+        session: AsyncSession,
+) -> Sequence[dict]:
+    """
+    Retrieve all genres with the count of associated movies.
+    Returns a list of dictionaries/objects compatible with GenreReadWithCount.
+    """
+    stmt = (
+        select(Genre, func.count(movie_genres.c.movie_id).label("movie_count"))
+        .outerjoin(movie_genres, Genre.id == movie_genres.c.genre_id)
+        .group_by(Genre.id)
+        .order_by(Genre.name)
+    )
+
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    return [
+        {**row[0].__dict__, "movie_count": row[1]}
+        for row in rows
+    ]
+
+
+async def get_genre_by_id(session: AsyncSession, genre_id: int) -> Optional[Genre]:
+    stmt = select(Genre).where(Genre.id == genre_id)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create_genre(session: AsyncSession, genre_in: GenreCreate) -> Genre:
+    new_genre = Genre(name=genre_in.name)
+    session.add(new_genre)
+    try:
+        await session.commit()
+        await session.refresh(new_genre)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Genre with this name already exists",
+        )
+    return new_genre
+
+
+async def update_genre(
+        session: AsyncSession, genre: Genre, genre_update: GenreUpdate
+) -> Genre:
+    if genre_update.name is not None:
+        genre.name = genre_update.name
+
+    session.add(genre)
+    try:
+        await session.commit()
+        await session.refresh(genre)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Genre with this name already exists",
+        )
+    return genre
+
+
+async def delete_genre(session: AsyncSession, genre: Genre) -> None:
+    #mb check if movies with deleted genre exist*
+    await session.delete(genre)
     await session.commit()
