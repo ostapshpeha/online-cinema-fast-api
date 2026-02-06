@@ -19,6 +19,8 @@ services:
         condition: service_started
     volumes:
       - .:/app
+    networks:
+       - db-network
   db:
     image: postgres:16-alpine
     container_name: cinema_db
@@ -36,6 +38,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - db-network
 
 
   redis:
@@ -45,6 +49,8 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - db-network
 
   worker:
     build: .
@@ -57,6 +63,8 @@ services:
       - db
     volumes:
       - .:/app
+    networks:
+      - db-network
 
   beat:
     build: .
@@ -69,8 +77,14 @@ services:
       - db
     volumes:
       - .:/app
+    networks:
+      - db-network
 
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  db-network:
+    driver: bridge
