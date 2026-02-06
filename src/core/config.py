@@ -11,11 +11,6 @@ class Settings(BaseSettings):
 
     DATABASE_URL_ASYNC: str | None = None
 
-    MINIO_ENDPOINT: str
-    MINIO_ROOT_USER: str
-    MINIO_ROOT_PASSWORD: str
-    MINIO_BUCKET_NAME: str
-
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
     AWS_REGION: str
