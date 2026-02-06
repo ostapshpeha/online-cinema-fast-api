@@ -387,11 +387,10 @@ async def delete_comment(
     comment = await _get_comment_or_404(session, comment_id)
 
     if comment.user_id != current_user.id:
-        if not await _is_moderator_or_admin(session, current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can delete only your own comments",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can delete only your own comments",
+        )
 
     await session.delete(comment)
     await session.commit()
