@@ -58,8 +58,7 @@ async def read_movie(
     return movie
 
 
-@router.post("/", response_model=schemas.MovieRead,
-             status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.MovieRead, status_code=status.HTTP_201_CREATED)
 async def create_movie_endpoint(
     movie_in: schemas.MovieCreate,
     db: AsyncSession = Depends(get_async_session),
@@ -122,8 +121,10 @@ async def read_genres(
     """
     return await crud.get_genres_with_counts(db)
 
-@genres_router.post("/", response_model=schemas.GenreRead,
-                    status_code=status.HTTP_201_CREATED)
+
+@genres_router.post(
+    "/", response_model=schemas.GenreRead, status_code=status.HTTP_201_CREATED
+)
 async def create_genre(
     genre_in: schemas.GenreCreate,
     db: AsyncSession = Depends(get_async_session),
@@ -134,6 +135,7 @@ async def create_genre(
     Moderator or admin access required.
     """
     return await crud.create_genre(db, genre_in)
+
 
 @genres_router.patch("/{genre_id}", response_model=schemas.GenreRead)
 async def update_genre(
@@ -151,6 +153,7 @@ async def update_genre(
         raise HTTPException(status_code=404, detail="Genre not found")
     return await crud.update_genre(db, genre, genre_update)
 
+
 @genres_router.delete("/{genre_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_genre(
     genre_id: int,
@@ -167,6 +170,7 @@ async def delete_genre(
     await crud.delete_genre(db, genre)
     return None
 
+
 @stars_router.get("/", response_model=List[schemas.StarRead])
 async def read_stars(
     skip: int = 0,
@@ -179,6 +183,7 @@ async def read_stars(
     Retrieve a list of stars with optional search and pagination.
     """
     return await crud.get_stars(db, skip=skip, limit=limit, search=search)
+
 
 @stars_router.get("/{star_id}", response_model=schemas.StarRead)
 async def read_star(
@@ -194,7 +199,10 @@ async def read_star(
         raise HTTPException(status_code=404, detail="Star not found")
     return star
 
-@stars_router.post("/", response_model=schemas.StarRead, status_code=status.HTTP_201_CREATED)
+
+@stars_router.post(
+    "/", response_model=schemas.StarRead, status_code=status.HTTP_201_CREATED
+)
 async def create_star(
     star_in: schemas.StarCreate,
     db: AsyncSession = Depends(get_async_session),
@@ -205,6 +213,7 @@ async def create_star(
     Moderator or admin access required.
     """
     return await crud.create_star(db, star_in)
+
 
 @stars_router.patch("/{star_id}", response_model=schemas.StarRead)
 async def update_star(
@@ -221,6 +230,7 @@ async def update_star(
     if not star:
         raise HTTPException(status_code=404, detail="Star not found")
     return await crud.update_star(db, star, star_update)
+
 
 @stars_router.delete("/{star_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_star(

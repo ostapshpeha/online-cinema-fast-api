@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence
 from fastapi import HTTPException, status
 from sqlalchemy import select, or_, desc, asc, func
 from sqlalchemy.exc import IntegrityError
@@ -7,9 +7,12 @@ from sqlalchemy.orm import selectinload
 
 from src.movies.models import Movie, Genre, Director, Star, movie_genres, movie_stars
 from src.movies.schemas import (
-    MovieCreate, MovieUpdate,
-    GenreCreate, GenreUpdate,
-    StarCreate, StarUpdate
+    MovieCreate,
+    MovieUpdate,
+    GenreCreate,
+    GenreUpdate,
+    StarCreate,
+    StarUpdate,
 )
 from src.orders.models import OrderItem, Order, OrderStatus
 
@@ -243,7 +246,7 @@ async def delete_movie(session: AsyncSession, movie: Movie) -> None:
 
 
 async def get_genres_with_counts(
-        session: AsyncSession,
+    session: AsyncSession,
 ) -> Sequence[dict]:
     """
     Retrieve all genres with the count of associated movies.
@@ -259,10 +262,7 @@ async def get_genres_with_counts(
     result = await session.execute(stmt)
     rows = result.all()
 
-    return [
-        {**row[0].__dict__, "movie_count": row[1]}
-        for row in rows
-    ]
+    return [{**row[0].__dict__, "movie_count": row[1]} for row in rows]
 
 
 async def get_genre_by_id(session: AsyncSession, genre_id: int) -> Optional[Genre]:
@@ -295,7 +295,7 @@ async def create_genre(session: AsyncSession, genre_in: GenreCreate) -> Genre:
 
 
 async def update_genre(
-        session: AsyncSession, genre: Genre, genre_update: GenreUpdate
+    session: AsyncSession, genre: Genre, genre_update: GenreUpdate
 ) -> Genre:
     """
     Update an existing genre.
@@ -324,20 +324,24 @@ async def delete_genre(session: AsyncSession, genre: Genre) -> None:
     Delete a genre if it is not assigned to any movie.
     Raises HTTP 400 if the genre is in use.
     """
-    stmt = select(movie_genres.c.movie_id).where(movie_genres.c.genre_id == genre.id).limit(1)
+    stmt = (
+        select(movie_genres.c.movie_id)
+        .where(movie_genres.c.genre_id == genre.id)
+        .limit(1)
+    )
     result = await session.execute(stmt)
 
     if result.scalar_one_or_none() is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete genre: it is assigned to one or more movies."
+            detail="Cannot delete genre: it is assigned to one or more movies.",
         )
     await session.delete(genre)
     await session.commit()
 
 
 async def get_stars(
-        session: AsyncSession, skip: int = 0, limit: int = 100, search: Optional[str] = None
+    session: AsyncSession, skip: int = 0, limit: int = 100, search: Optional[str] = None
 ) -> Sequence[Star]:
     """
     Retrieve a list of stars with optional search and pagination.
@@ -381,7 +385,7 @@ async def create_star(session: AsyncSession, star_in: StarCreate) -> Star:
 
 
 async def update_star(
-        session: AsyncSession, star: Star, star_update: StarUpdate
+    session: AsyncSession, star: Star, star_update: StarUpdate
 ) -> Star:
     """
     Update an existing star.
@@ -410,13 +414,15 @@ async def delete_star(session: AsyncSession, star: Star) -> None:
     Delete a star if it is not assigned to any movie.
     Raises HTTP 400 if the star is in use.
     """
-    stmt = select(movie_stars.c.movie_id).where(movie_stars.c.star_id == star.id).limit(1)
+    stmt = (
+        select(movie_stars.c.movie_id).where(movie_stars.c.star_id == star.id).limit(1)
+    )
     result = await session.execute(stmt)
 
     if result.scalar_one_or_none() is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete star: they are assigned to one or more movies."
+            detail="Cannot delete star: they are assigned to one or more movies.",
         )
 
     await session.delete(star)
