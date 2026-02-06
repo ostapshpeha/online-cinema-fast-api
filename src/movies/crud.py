@@ -266,12 +266,20 @@ async def get_genres_with_counts(
 
 
 async def get_genre_by_id(session: AsyncSession, genre_id: int) -> Optional[Genre]:
+    """
+    Retrieve a genre by its ID.
+    Returns None if the genre does not exist.
+    """
     stmt = select(Genre).where(Genre.id == genre_id)
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
 
 async def create_genre(session: AsyncSession, genre_in: GenreCreate) -> Genre:
+    """
+    Create a new genre.
+    Raises HTTP 400 if a genre with the same name already exists.
+    """
     new_genre = Genre(name=genre_in.name)
     session.add(new_genre)
     try:
@@ -289,6 +297,10 @@ async def create_genre(session: AsyncSession, genre_in: GenreCreate) -> Genre:
 async def update_genre(
         session: AsyncSession, genre: Genre, genre_update: GenreUpdate
 ) -> Genre:
+    """
+    Update an existing genre.
+    Only provided fields are updated.
+    """
     update_data = genre_update.model_dump(exclude_unset=True)
 
     for key, value in update_data.items():
@@ -308,6 +320,10 @@ async def update_genre(
 
 
 async def delete_genre(session: AsyncSession, genre: Genre) -> None:
+    """
+    Delete a genre if it is not assigned to any movie.
+    Raises HTTP 400 if the genre is in use.
+    """
     stmt = select(movie_genres.c.movie_id).where(movie_genres.c.genre_id == genre.id).limit(1)
     result = await session.execute(stmt)
 
@@ -323,6 +339,9 @@ async def delete_genre(session: AsyncSession, genre: Genre) -> None:
 async def get_stars(
         session: AsyncSession, skip: int = 0, limit: int = 100, search: Optional[str] = None
 ) -> Sequence[Star]:
+    """
+    Retrieve a list of stars with optional search and pagination.
+    """
     stmt = select(Star)
     if search:
         stmt = stmt.where(Star.name.ilike(f"%{search}%"))
@@ -333,12 +352,20 @@ async def get_stars(
 
 
 async def get_star_by_id(session: AsyncSession, star_id: int) -> Optional[Star]:
+    """
+    Retrieve a star by its ID.
+    Returns None if the star does not exist.
+    """
     stmt = select(Star).where(Star.id == star_id)
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
 
 async def create_star(session: AsyncSession, star_in: StarCreate) -> Star:
+    """
+    Create a new star.
+    Raises HTTP 400 if a star with the same name already exists.
+    """
     new_star = Star(name=star_in.name)
     session.add(new_star)
     try:
@@ -356,6 +383,10 @@ async def create_star(session: AsyncSession, star_in: StarCreate) -> Star:
 async def update_star(
         session: AsyncSession, star: Star, star_update: StarUpdate
 ) -> Star:
+    """
+    Update an existing star.
+    Only provided fields are updated.
+    """
     update_data = star_update.model_dump(exclude_unset=True)
 
     for key, value in update_data.items():
@@ -375,6 +406,10 @@ async def update_star(
 
 
 async def delete_star(session: AsyncSession, star: Star) -> None:
+    """
+    Delete a star if it is not assigned to any movie.
+    Raises HTTP 400 if the star is in use.
+    """
     stmt = select(movie_stars.c.movie_id).where(movie_stars.c.star_id == star.id).limit(1)
     result = await session.execute(stmt)
 

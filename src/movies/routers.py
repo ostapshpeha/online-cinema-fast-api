@@ -32,6 +32,9 @@ async def read_movies(
     db: AsyncSession = Depends(get_async_session),
     staff: User = user_permission,
 ):
+    """
+    Retrieve a list of movies with filtering, search, sorting, and pagination.
+    """
 
     movies = await crud.get_movies(
         db, skip=skip, limit=limit, search=search, sort_by=sort_by, genre_id=genre_id
@@ -45,6 +48,9 @@ async def read_movie(
     db: AsyncSession = Depends(get_async_session),
     staff: User = user_permission,
 ):
+    """
+    Retrieve detailed information about a movie by its ID.
+    """
 
     movie = await crud.get_movie_by_id(db, movie_id=movie_id)
     if not movie:
@@ -59,6 +65,10 @@ async def create_movie_endpoint(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Create a new movie.
+    Moderator or admin access required.
+    """
 
     return await crud.create_movie(session=db, movie_in=movie_in)
 
@@ -70,6 +80,10 @@ async def update_movie_endpoint(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Update an existing movie.
+    Moderator or admin access required.
+    """
     movie = await crud.get_movie_by_id(db, movie_id=movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
@@ -86,6 +100,10 @@ async def delete_movie_endpoint(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Delete a movie if it has not been purchased.
+    Moderator or admin access required.
+    """
     movie = await crud.get_movie_by_id(db, movie_id=movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
@@ -100,7 +118,7 @@ async def read_genres(
     staff: User = user_permission,
 ):
     """
-    List all genres with the count of movies in each.
+    Retrieve all genres with the number of movies in each genre.
     """
     return await crud.get_genres_with_counts(db)
 
@@ -111,6 +129,10 @@ async def create_genre(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Create a new genre.
+    Moderator or admin access required.
+    """
     return await crud.create_genre(db, genre_in)
 
 @genres_router.patch("/{genre_id}", response_model=schemas.GenreRead)
@@ -120,6 +142,10 @@ async def update_genre(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Update an existing genre.
+    Moderator or admin access required.
+    """
     genre = await crud.get_genre_by_id(db, genre_id)
     if not genre:
         raise HTTPException(status_code=404, detail="Genre not found")
@@ -131,6 +157,10 @@ async def delete_genre(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Delete a genre if it is not assigned to any movie.
+    Moderator or admin access required.
+    """
     genre = await crud.get_genre_by_id(db, genre_id)
     if not genre:
         raise HTTPException(status_code=404, detail="Genre not found")
@@ -145,6 +175,9 @@ async def read_stars(
     db: AsyncSession = Depends(get_async_session),
     staff: User = user_permission,
 ):
+    """
+    Retrieve a list of stars with optional search and pagination.
+    """
     return await crud.get_stars(db, skip=skip, limit=limit, search=search)
 
 @stars_router.get("/{star_id}", response_model=schemas.StarRead)
@@ -153,6 +186,9 @@ async def read_star(
     db: AsyncSession = Depends(get_async_session),
     staff: User = user_permission,
 ):
+    """
+    Retrieve detailed information about a star by its ID.
+    """
     star = await crud.get_star_by_id(db, star_id)
     if not star:
         raise HTTPException(status_code=404, detail="Star not found")
@@ -164,6 +200,10 @@ async def create_star(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Create a new star.
+    Moderator or admin access required.
+    """
     return await crud.create_star(db, star_in)
 
 @stars_router.patch("/{star_id}", response_model=schemas.StarRead)
@@ -173,6 +213,10 @@ async def update_star(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Update an existing star.
+    Moderator or admin access required.
+    """
     star = await crud.get_star_by_id(db, star_id)
     if not star:
         raise HTTPException(status_code=404, detail="Star not found")
@@ -184,6 +228,10 @@ async def delete_star(
     db: AsyncSession = Depends(get_async_session),
     staff: User = moderator_permission,
 ):
+    """
+    Delete a star if it is not assigned to any movie.
+    Moderator or admin access required.
+    """
     star = await crud.get_star_by_id(db, star_id)
     if not star:
         raise HTTPException(status_code=404, detail="Star not found")
