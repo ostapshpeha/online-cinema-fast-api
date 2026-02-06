@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.movies.models import Movie, Genre, Director, Star, movie_genres
+from src.movies.models import Movie, Genre, Director, Star, movie_genres, movie_stars
 from src.movies.schemas import (
     MovieCreate, MovieUpdate,
     GenreCreate, GenreUpdate,
@@ -289,8 +289,10 @@ async def create_genre(session: AsyncSession, genre_in: GenreCreate) -> Genre:
 async def update_genre(
         session: AsyncSession, genre: Genre, genre_update: GenreUpdate
 ) -> Genre:
-    if genre_update.name is not None:
-        genre.name = genre_update.name
+    update_data = genre_update.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(genre, key, value)
 
     session.add(genre)
     try:
@@ -354,8 +356,10 @@ async def create_star(session: AsyncSession, star_in: StarCreate) -> Star:
 async def update_star(
         session: AsyncSession, star: Star, star_update: StarUpdate
 ) -> Star:
-    if star_update.name is not None:
-        star.name = star_update.name
+    update_data = star_update.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(star, key, value)
 
     session.add(star)
     try:
@@ -371,5 +375,14 @@ async def update_star(
 
 
 async def delete_star(session: AsyncSession, star: Star) -> None:
+    stmt = select(movie_stars.c.movie_id).where(movie_stars.c.star_id == star.id).limit(1)
+    result = await session.execute(stmt)
+
+    if result.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete star: they are assigned to one or more movies."
+        )
+
     await session.delete(star)
     await session.commit()

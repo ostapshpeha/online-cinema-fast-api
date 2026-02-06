@@ -63,7 +63,7 @@ async def create_movie_endpoint(
     return await crud.create_movie(session=db, movie_in=movie_in)
 
 
-@router.put("/{movie_id}", response_model=schemas.MovieRead)
+@router.patch("/{movie_id}", response_model=schemas.MovieRead)
 async def update_movie_endpoint(
     movie_id: int,
     movie_update: schemas.MovieUpdate,
@@ -113,7 +113,7 @@ async def create_genre(
 ):
     return await crud.create_genre(db, genre_in)
 
-@genres_router.put("/{genre_id}", response_model=schemas.GenreRead)
+@genres_router.patch("/{genre_id}", response_model=schemas.GenreRead)
 async def update_genre(
     genre_id: int,
     genre_update: schemas.GenreUpdate,
@@ -166,7 +166,7 @@ async def create_star(
 ):
     return await crud.create_star(db, star_in)
 
-@stars_router.put("/{star_id}", response_model=schemas.StarRead)
+@stars_router.patch("/{star_id}", response_model=schemas.StarRead)
 async def update_star(
     star_id: int,
     star_update: schemas.StarUpdate,
