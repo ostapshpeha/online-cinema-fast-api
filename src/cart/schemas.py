@@ -15,5 +15,6 @@ class MovieReadSchema(BaseModel):
 class CartItemCreate(BaseModel):
     movie_id: int
 
+
 class MessageSchema(BaseModel):
     message: str

@@ -12,6 +12,7 @@ app.include_router(interaction_router, prefix="/api/v1")
 
 app.include_router(cart_router, prefix="/api/v1")
 
+
 @app.get("/")
 def read_root():
     return {"status": "Backend is running"}
