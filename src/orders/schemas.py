@@ -1,28 +1,34 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List
-from enum import Enum
 from decimal import Decimal
 
+from src.orders.models import OrderStatus
 
-class OrderStatusEnum(str, Enum):
-    PENDING = "pending"
-    PAID = "paid"
-    CANCELED = "canceled"
+
+class MovieShort(BaseModel):
+    name: str
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderItemRead(BaseModel):
-    movie_title: str
+    movie: MovieShort
     price_at_order: Decimal
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderRead(BaseModel):
     id: int
     created_at: datetime
-    status: OrderStatusEnum
+    status: OrderStatus
     total_amount: Decimal
     items: List[OrderItemRead]
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderCreate(BaseModel):
     pass
+
+
+class MessageSchema(BaseModel):
+    message: str
