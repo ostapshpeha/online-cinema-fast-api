@@ -306,6 +306,70 @@ async def update_genre(
 
 
 async def delete_genre(session: AsyncSession, genre: Genre) -> None:
-    #mb check if movies with deleted genre exist*
+    stmt = select(movie_genres.c.movie_id).where(movie_genres.c.genre_id == genre.id).limit(1)
+    result = await session.execute(stmt)
+
+    if result.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete genre: it is assigned to one or more movies."
+        )
     await session.delete(genre)
+    await session.commit()
+
+
+async def get_stars(
+        session: AsyncSession, skip: int = 0, limit: int = 100, search: Optional[str] = None
+) -> Sequence[Star]:
+    stmt = select(Star)
+    if search:
+        stmt = stmt.where(Star.name.ilike(f"%{search}%"))
+
+    stmt = stmt.order_by(Star.name).offset(skip).limit(limit)
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def get_star_by_id(session: AsyncSession, star_id: int) -> Optional[Star]:
+    stmt = select(Star).where(Star.id == star_id)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create_star(session: AsyncSession, star_in: StarCreate) -> Star:
+    new_star = Star(name=star_in.name)
+    session.add(new_star)
+    try:
+        await session.commit()
+        await session.refresh(new_star)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Star with this name already exists",
+        )
+    return new_star
+
+
+async def update_star(
+        session: AsyncSession, star: Star, star_update: StarUpdate
+) -> Star:
+    if star_update.name is not None:
+        star.name = star_update.name
+
+    session.add(star)
+    try:
+        await session.commit()
+        await session.refresh(star)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Star with this name already exists",
+        )
+    return star
+
+
+async def delete_star(session: AsyncSession, star: Star) -> None:
+    await session.delete(star)
     await session.commit()
