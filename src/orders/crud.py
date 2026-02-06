@@ -95,8 +95,6 @@ async def create_order_item(
     db.add(order_item)
 
 
-
-
 async def get_orders(
     db: AsyncSession,
     user_id: Optional[int] = None,
