@@ -2,13 +2,14 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import List
 
+from src.movies.schemas import GenreRead
+
 
 class CartItemRead(BaseModel):
-    id: int
-    movie_id: int
     movie_title: str
     movie_price: float
-    added_at: datetime
+    movie_genre: GenreRead
+    release_year: int
 
 
 class CartRead(BaseModel):
@@ -20,3 +21,6 @@ class CartRead(BaseModel):
 
 class CartItemCreate(BaseModel):
     movie_id: int
+
+class MessageSchema(BaseModel):
+    message: str
