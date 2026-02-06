@@ -1,5 +1,6 @@
-from sqlalchemy import select, exists, and_
+from sqlalchemy import select, exists, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.cart.exceptions import MovieAlreadyPurchasedException, \
     MovieAlreadyInCartException, MovieNotInCartException, \
@@ -27,8 +28,11 @@ async def check_if_user_own_movie(db: AsyncSession,
 
 async def get_or_create_cart(db: AsyncSession, user_id: int) -> Cart:
     cart = await db.scalar(
-        select(Cart).where(Cart.user_id == user_id)
-    )
+        select(Cart)
+        .where(Cart.user_id == user_id)
+        .options(
+            selectinload(Cart.items)
+    ))
 
     if not cart:
         cart = Cart(user_id=user_id)
@@ -76,18 +80,19 @@ async def remove_movie(db: AsyncSession,
     await db.commit()
 
 
-async def select_all_movies_from_cart(db: AsyncSession, user_id: int):
+async def select_all_movies_from_cart(db: AsyncSession, cart_id: int):
     cart = await db.scalar(
         select(Cart).where(
-            Cart.user_id == user_id,
+            Cart.id == cart_id,
         )
     )
     if not cart:
-        raise CartIsNotExistException("You don't have a cart")
+        raise CartIsNotExistException("Wrong cart id")
     result = await db.scalars(
         select(Movie)
         .join(CartItem, CartItem.movie_id == Movie.id)
         .where(CartItem.cart_id == cart.id)
+        .options(selectinload(Movie.genres))
     )
     if not result:
         raise CartIsEmptyException("Cart is empty")
@@ -106,5 +111,7 @@ async def clear_cart(db: AsyncSession, user_id: int):
         select(CartItem).where(CartItem.cart_id == cart.id))
     if not cart_items:
         raise CartIsEmptyException("Cart is empty")
-    await db.delete(cart_items)
+    await db.execute(
+        delete(CartItem).where(CartItem.cart_id == cart.id)
+    )
     await db.commit()

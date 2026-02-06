@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,9 +8,9 @@ from src.auth.models import UserGroupEnum, User
 from src.cart.exceptions import MovieAlreadyPurchasedException, \
     MovieAlreadyInCartException, CartIsNotExistException, \
     MovieNotInCartException, CartIsEmptyException
-from src.cart.schemas import CartRead, MessageSchema
+from src.cart.schemas import MessageSchema, MovieReadSchema
 from src.core.database import get_async_session
-from crud import add_movie_to_cart, get_or_create_cart, remove_movie, \
+from src.cart.crud import add_movie_to_cart, remove_movie, \
     clear_cart, select_all_movies_from_cart
 
 router = APIRouter(prefix="/cart", tags=["Carts"])
@@ -24,7 +24,8 @@ moderator_permission = Depends(
 )
 
 
-@router.post("/movies/{movie_id}", response_model=CartRead,
+@router.post("/movies/{movie_id}", status_code=201,
+             response_model=MessageSchema,
              dependencies=[user_permission])
 async def add_movie_to_user_cart(
         movie_id: int,
@@ -38,9 +39,7 @@ async def add_movie_to_user_cart(
         )
     except (MovieAlreadyPurchasedException, MovieAlreadyInCartException) as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-    cart = await get_or_create_cart(db, current_user.id)
-    return cart
+    return MessageSchema(message="Movie successfully added")
 
 
 @router.delete("/movies/{movie_id}", response_model=MessageSchema,
@@ -70,13 +69,15 @@ async def remove_all_movies_from_cart(
         raise HTTPException(status_code=400, detail=str(e))
     return MessageSchema(message="Movie successfully deleted")
 
-@router.get("/", response_model=CartRead)
-async def select_all_movies(db: Annotated[AsyncSession, Depends(get_async_session)],
-        current_user: User = Depends(get_current_user)):
+
+@router.get("/{cart_id}", response_model=List[MovieReadSchema],dependencies=[user_permission])
+async def select_all_movies(cart_id: int,
+                            db: Annotated[
+                                AsyncSession, Depends(get_async_session)]
+                            ):
     try:
         result = await select_all_movies_from_cart(db=db,
-                         user_id=current_user.id)
+                                                   cart_id=cart_id)
     except (CartIsNotExistException, CartIsEmptyException) as e:
         raise HTTPException(status_code=400, detail=str(e))
     return result
-
