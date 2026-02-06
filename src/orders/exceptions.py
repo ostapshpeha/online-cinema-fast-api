@@ -17,6 +17,6 @@ class CancellationIsNotAvailable(OrderNotFoundException):
 class MovieIsNotAvailableException(OrderBaseException):
     pass
 
+
 class OrderAlreadyPendingException(OrderBaseException):
     pass
-
