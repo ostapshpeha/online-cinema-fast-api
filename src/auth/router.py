@@ -102,7 +102,7 @@ async def register(
     await session.refresh(new_user)
 
     activation_link = (
-        f"http://localhost:8000/api/v1/auth/activate/"
+        "http://localhost:8000/api/v1/auth/activate/"
     )
 
     send_email(
