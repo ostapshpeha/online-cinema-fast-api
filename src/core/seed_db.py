@@ -13,7 +13,6 @@ from src.movies.models import (
 
 async def seed_data():
     async with async_session_maker() as session:
-
         for group in UserGroupEnum:
             exists = await session.scalar(
                 select(UserGroup).where(UserGroup.name == group.value)
@@ -37,9 +36,7 @@ async def seed_data():
         genres = {}
 
         for name in genre_names:
-            genre = await session.scalar(
-                select(Genre).where(Genre.name == name)
-            )
+            genre = await session.scalar(select(Genre).where(Genre.name == name))
             if not genre:
                 genre = Genre(name=name)
                 session.add(genre)
@@ -68,9 +65,7 @@ async def seed_data():
         stars = {}
 
         for name in star_names:
-            star = await session.scalar(
-                select(Star).where(Star.name == name)
-            )
+            star = await session.scalar(select(Star).where(Star.name == name))
             if not star:
                 star = Star(name=name)
                 session.add(star)
