@@ -25,6 +25,8 @@ from src.auth.schemas import (
     TokenRefreshRequestSchema,
     UserProfileResponse,
     UserProfileCreate,
+    ActivationResponse,
+    ActivationRequest,
 )
 from src.auth.security import (
     create_access_token,
@@ -101,6 +103,7 @@ async def register(
         to_email=new_user.email,
         template_id=settings.SENDGRID_ACTIVATION_TEMPLATE_ID,
         data={"activation_link": activation_link},
+        email_type="email_activation",
     )
     return UserRegistrationResponseSchema(
         id=new_user.id,
@@ -170,18 +173,26 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.get(
-    "/activate/{token}",
+@router.post(
+    "/activate",
+    response_model=ActivationResponse,
+    status_code=status.HTTP_200_OK,
     summary="Activate user account",
-    description="Activate user account using activation token",
+    description="Activate user account using activation token from email",
 )
 async def activate_user(
-    token: str,
+    data: ActivationRequest,
     session: AsyncSession = Depends(get_async_session),
 ):
+    """
+    Activate user account.
+
+    User receives activation token via email after registration.
+    This endpoint validates the token and activates the account.
+    """
     result = await session.execute(
         select(ActivationTokenModel)
-        .where(ActivationTokenModel.token == token)
+        .where(ActivationTokenModel.token == data.token)
         .options(selectinload(ActivationTokenModel.user))
     )
 
@@ -212,10 +223,9 @@ async def activate_user(
 
     user.is_active = True
     await session.delete(activation_token)
-
     await session.commit()
 
-    return {"detail": "Account successfully activated"}
+    return ActivationResponse(detail="Account successfully activated", email=user.email)
 
 
 @router.post(
@@ -392,13 +402,14 @@ async def sendgrid_webhook(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
+    """Handle SendGrid webhook events."""
     try:
         events = await request.json()
     except JSONDecodeError:
-        return {"detail": "empty payload ignored"}
+        return {"status": "error", "detail": "Invalid JSON"}
 
     if not isinstance(events, list):
-        return {"detail": "non-event payload ignored"}
+        return {"status": "error", "detail": "Expected event list"}
 
     for event in events:
         await SendGridWebhookService.process_event(event, session)
