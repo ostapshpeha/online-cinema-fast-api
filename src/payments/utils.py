@@ -49,9 +49,7 @@ async def resolve_payment(
             db.add(payment_item)
         cart = await db.scalar(select(Cart).where(Cart.user_id == user_id))
         if cart:
-            await db.execute(
-                delete(CartItem).where(CartItem.cart_id == cart.id)
-            )
+            await db.execute(delete(CartItem).where(CartItem.cart_id == cart.id))
 
         await db.commit()
 
