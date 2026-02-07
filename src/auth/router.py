@@ -46,7 +46,7 @@ from src.notifications.services.sendgrid_webhook import SendGridWebhookService
 from json import JSONDecodeError
 from src.auth.validators import validate_passwords_different
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/user", tags=["User"])
 s3_service = S3Service()
 
 
