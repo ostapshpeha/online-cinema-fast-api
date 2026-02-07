@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy import Enum as SAEnum, ForeignKey, DECIMAL
 
 from sqlalchemy import DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
 
@@ -40,7 +40,13 @@ class Payment(Base):
     )
     amount: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=False)
     external_payment_id: Mapped[Optional[str]]
-
+    payment_intent: Mapped[Optional[str]]
+    items: Mapped[list["PaymentItem"]] = relationship(
+        "PaymentItem",
+        back_populates="payment",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
 
 class PaymentItem(Base):
     __tablename__ = "payment_items"
@@ -56,3 +62,4 @@ class PaymentItem(Base):
         index=True,
     )
     price_at_payment: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=False)
+    payment: Mapped["Payment"] = relationship("Payment", back_populates="items")
