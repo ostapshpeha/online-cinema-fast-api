@@ -62,7 +62,9 @@ class SendGridWebhookService:
 
         if not user:
             return
-        await send_telegram_message(msg_gen.get_payment_failure_message(email, event_type, reason))
+        await send_telegram_message(
+            msg_gen.get_payment_failure_message(email, event_type, reason)
+        )
 
     @staticmethod
     async def process_event(event: dict, session: AsyncSession) -> None:

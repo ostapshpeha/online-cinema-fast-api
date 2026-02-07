@@ -13,7 +13,7 @@ def get_payment_failure_message(email: str, event: str, reason: str | None) -> s
         "bounce": "Email does not exist (Hard Bounce)",
         "dropped": "Email previously bounced/unsubscribed",
         "spamreport": "User marked as Spam",
-        "blocked": "IP/Domain blocked"
+        "blocked": "IP/Domain blocked",
     }.get(event, event)
 
     return (
