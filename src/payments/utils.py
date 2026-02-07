@@ -12,8 +12,7 @@ from src.payments.models import Payment, PaymentStatus, PaymentItem
 
 
 async def resolve_payment(
-        request: Request,
-        db: Annotated[AsyncSession, Depends(get_async_session)]
+    request: Request, db: Annotated[AsyncSession, Depends(get_async_session)]
 ):
     payload = await request.json()
     obj = payload.get("data").get("object")
@@ -44,15 +43,14 @@ async def resolve_payment(
             payment_item = PaymentItem(
                 payment_id=payment.id,
                 order_item_id=item.id,
-                price_at_payment=float(item.price_at_order)
+                price_at_payment=float(item.price_at_order),
             )
             db.add(payment_item)
         await db.commit()
 
     elif payload.get("type") == "refund.created":
         payment_to_refund = await db.scalar(
-            select(Payment).where(
-                Payment.payment_intent == obj.get("payment_intent"))
+            select(Payment).where(Payment.payment_intent == obj.get("payment_intent"))
         )
         if payment_to_refund:
             payment_to_refund.status = PaymentStatus.REFUNDED
@@ -64,9 +62,9 @@ async def resolve_payment(
 
 
 async def create_checkout_session(
-        user_id: int | None = None,
-        order_id: int | None = None,
-        amount: float | None = None,
+    user_id: int | None = None,
+    order_id: int | None = None,
+    amount: float | None = None,
 ):
     if not settings.STRIPE_API_KEY:
         raise RuntimeError("STRIPE_API_KEY is not set")

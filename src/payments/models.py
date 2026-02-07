@@ -45,8 +45,9 @@ class Payment(Base):
         "PaymentItem",
         back_populates="payment",
         cascade="all, delete-orphan",
-        lazy="selectin"
+        lazy="selectin",
     )
+
 
 class PaymentItem(Base):
     __tablename__ = "payment_items"
