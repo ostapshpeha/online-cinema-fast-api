@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     AWS_REGION: str = "eu-central-1"
     S3_BUCKET_NAME: str = "test-bucket"
 
-    STRIPE_API_KEY: str
-    STRIPE_WEBHOOK_KEY: str
+    STRIPE_API_KEY: str | None = None
+    STRIPE_WEBHOOK_KEY: str | None = None
     FRONTEND_SUCCESS_URL: str = "https://example.com/success"
     FRONTEND_CANCEL_URL: str = "https://example.com/cancel"
 
