@@ -101,7 +101,7 @@ async def register(
     await session.commit()
     await session.refresh(new_user)
 
-    activation_link = "http://localhost:8000/api/v1/auth/activate/"
+    activation_link = f"http://localhost:8000/api/v1/user/activate/{activation_token_value}"
 
     send_email(
         to_email=new_user.email,
@@ -361,7 +361,7 @@ async def request_password_reset(
     session.add(reset_token)
     await session.commit()
 
-    reset_link = f"http://localhost:8000/api/v1/auth/password-reset/confirm?token={reset_token_value}"
+    reset_link = f"http://localhost:8000/api/v1/user/password-reset/confirm/{reset_token_value}"
 
     send_email(
         to_email=user.email,
