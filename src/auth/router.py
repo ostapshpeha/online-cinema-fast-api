@@ -32,6 +32,7 @@ from src.auth.schemas import (
     PasswordChangeSchema,
     PasswordResetConfirmSchema,
     PasswordResetRequestSchema,
+    UserProfileUpdate,
 )
 from src.auth.security import (
     create_access_token,
@@ -101,7 +102,9 @@ async def register(
     await session.commit()
     await session.refresh(new_user)
 
-    activation_link = "http://localhost:8000/api/v1/auth/activate/"
+    activation_link = (
+        f"http://localhost:8000/api/v1/user/activate/{activation_token_value}"
+    )
 
     send_email(
         to_email=new_user.email,
@@ -361,7 +364,9 @@ async def request_password_reset(
     session.add(reset_token)
     await session.commit()
 
-    reset_link = f"http://localhost:8000/api/v1/auth/password-reset/confirm?token={reset_token_value}"
+    reset_link = (
+        f"http://localhost:8000/api/v1/user/password-reset/confirm/{reset_token_value}"
+    )
 
     send_email(
         to_email=user.email,
@@ -517,6 +522,57 @@ async def get_my_profile(profile: UserProfileModel = Depends(get_current_user_pr
             status_code=status.HTTP_204_NO_CONTENT,
             detail="Profile not found. Please create one first.",
         )
+
+    avatar_url = None
+    if profile.avatar:
+        avatar_url = await s3_service.generate_presigned_url(profile.avatar)
+
+    response = UserProfileResponse.model_validate(profile)
+    response.avatar_url = avatar_url
+
+    return response
+
+
+@router.patch("/profile", response_model=UserProfileResponse)
+async def update_my_profile(
+    profile_data: UserProfileUpdate,
+    profile: UserProfileModel = Depends(get_current_user_profile),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Partially update user profile.
+
+    Only provided fields will be updated. Null/None values are ignored.
+    This endpoint supports partial updates - you can update one or more fields
+    without affecting others.
+
+    Updatable fields:
+    - first_name
+    - last_name
+    - date_of_birth
+    - info
+
+    Note: Avatar updates should use the dedicated /profile/avatar endpoint.
+    """
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found. Create profile before updating.",
+        )
+
+    update_data = profile_data.model_dump(exclude_unset=True)
+
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fields provided for update",
+        )
+
+    for field, value in update_data.items():
+        setattr(profile, field, value)
+
+    await db.commit()
+    await db.refresh(profile)
 
     avatar_url = None
     if profile.avatar:
