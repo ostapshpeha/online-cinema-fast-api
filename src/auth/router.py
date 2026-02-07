@@ -24,7 +24,7 @@ from src.auth.schemas import (
     UserRegistrationResponseSchema,
     TokenRefreshRequestSchema,
     UserProfileResponse,
-    UserProfileCreate,
+    UserProfileCreate, ActivationResponse, ActivationRequest,
 )
 from src.auth.security import (
     create_access_token,
@@ -171,18 +171,26 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.get(
-    "/activate/{token}",
+@router.post(
+    "/activate",
+    response_model=ActivationResponse,
+    status_code=status.HTTP_200_OK,
     summary="Activate user account",
-    description="Activate user account using activation token",
+    description="Activate user account using activation token from email",
 )
 async def activate_user(
-    token: str,
-    session: AsyncSession = Depends(get_async_session),
+        data: ActivationRequest,
+        session: AsyncSession = Depends(get_async_session),
 ):
+    """
+    Activate user account.
+
+    User receives activation token via email after registration.
+    This endpoint validates the token and activates the account.
+    """
     result = await session.execute(
         select(ActivationTokenModel)
-        .where(ActivationTokenModel.token == token)
+        .where(ActivationTokenModel.token == data.token)
         .options(selectinload(ActivationTokenModel.user))
     )
 
@@ -213,10 +221,12 @@ async def activate_user(
 
     user.is_active = True
     await session.delete(activation_token)
-
     await session.commit()
 
-    return {"detail": "Account successfully activated"}
+    return ActivationResponse(
+        detail="Account successfully activated",
+        email=user.email
+    )
 
 
 @router.post(
