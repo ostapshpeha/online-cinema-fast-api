@@ -24,11 +24,6 @@ Clone repo:
   poetry config virtualenvs.in-project true
   poetry install
 ```
-This will raise:
-
-PostgreSQL on port 5432
-
-Redis on port 6379
 
 ### 4. Docker + DB
 
@@ -39,9 +34,51 @@ Redis on port 6379
   docker exec -it cinema_app alembic current # check DB status after migration
 ```
 
+## Testing
+
+The project uses **pytest** for automated testing. To ensure a clean environment, all tests automatically use an isolated **SQLite in-memory database**, so no extra database configuration is required for running tests.
+
+### Local Execution
+Ensure that all dependencies are installed via Poetry:
+```bash
+poetry install
+```
+
+Run all tests:
+```bash
+poetry run pytest
+```
+
+Run tests with a detailed verbose report:
+```bash
+poetry run pytest -v
+```
+
+### Docker Execution
+If you are running the application using Docker Compose, use the following command to run tests inside the container:
+```bash
+docker-compose exec app poetry run pytest
+```
+
+### Code Quality (Linting & Formatting)
+Before creating a Pull Request, please ensure your code adheres to the project's style guide using **Ruff**:
+
+```bash
+# Check for errors and auto-fix simple issues
+poetry run ruff check . --fix
+
+# Format the code according to project rules
+poetry run ruff format .
+```
+
 ### Before commit!!!
 ```bash
-  poetry run ruff check .
+  python -m poetry run ruff check .
+  python -m poetry run ruff format .
+````
+
+```bash
+  docker-compose -f docker-compose-tests.yml up --build
 ````
 
 The API will then be available at: http://localhost:8000
@@ -55,16 +92,16 @@ Pull Requests: **Only to the develop branch**.
 
 A minimum of 2 approvals from colleagues is required.
 
-CI automatically checks the code with the Ruff linter.
+CI automatically checks the code with the Ruff linter and tests
 
 Useful commands:
 ```bash
-  poetry run ruff check
+  poetry run ruff check .
 ```
 -check the code with a linter.
 
 ```bash
-  poetry run rough format.
+  poetry run rough format .
 ```
 — automatically format the code.
 

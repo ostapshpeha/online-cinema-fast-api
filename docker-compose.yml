@@ -2,7 +2,12 @@ services:
   app:
     build: .
     container_name: cinema_app
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      bash -c "alembic upgrade head &&
+              python -m src.core.seed_db &&
+              uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      POSTGRES_HOST: db
     ports:
       - "8000:8000"
     env_file:
@@ -14,6 +19,8 @@ services:
         condition: service_started
     volumes:
       - .:/app
+    networks:
+       - db-network
   db:
     image: postgres:16-alpine
     container_name: cinema_db
@@ -31,17 +38,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - db-network
 
-
-  test_db:
-    image: postgres:16-alpine
-    container_name: cinema_test_db
-    environment:
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_password
-      POSTGRES_DB: test_cinema
-    ports:
-      - "5433:5432"
 
   redis:
     image: redis:7-alpine
@@ -50,7 +49,42 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - db-network
+
+  worker:
+    build: .
+    container_name: cinema_worker
+    command: celery -A src.core.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - .:/app
+    networks:
+      - db-network
+
+  beat:
+    build: .
+    container_name: cinema_beat
+    command: celery -A src.core.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - .:/app
+    networks:
+      - db-network
+
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  db-network:
+    driver: bridge
