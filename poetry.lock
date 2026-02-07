@@ -60,6 +60,36 @@ files = [
 ]
 
 [[package]]
+name = "aiogram"
+version = "3.24.0"
+description = "Modern and fully asynchronous framework for Telegram Bot API"
+optional = false
+python-versions = "<3.15,>=3.10"
+groups = ["main"]
+files = [
+    {file = "aiogram-3.24.0-py3-none-any.whl", hash = "sha256:eb3cc05b0ec53c7e24d7eada5c069aee2f431332e2e7bc2c8adf30d13b02f715"},
+    {file = "aiogram-3.24.0.tar.gz", hash = "sha256:ec547ede5bfa8a7a4f5fb02c75391333fc43b6f3de6a6d3f00a32e27628df5f6"},
+]
+
+[package.dependencies]
+aiofiles = ">=23.2.1,<26.0"
+aiohttp = ">=3.9.0,<3.14"
+certifi = ">=2023.7.22"
+magic-filter = ">=1.0.12,<1.1"
+pydantic = ">=2.4.1,<2.13"
+typing-extensions = ">=4.7.0,<=5.0"
+
+[package.extras]
+cli = ["aiogram-cli (>=1.1.0,<2.0.0)"]
+docs = ["furo (>=2024.8.6,<2024.9.0)", "markdown-include (>=0.8.1,<0.9.0)", "pygments (>=2.18.0,<2.19.0)", "pymdown-extensions (>=10.3,<11.0)", "sphinx (>=8.0.2,<8.1.0)", "sphinx-autobuild (>=2024.9.3,<2024.10.0)", "sphinx-copybutton (>=0.5.2,<0.6.0)", "sphinx-intl (>=2.2.0,<2.3.0)", "sphinx-substitution-extensions (>=2024.8.6,<2024.9.0)", "sphinxcontrib-towncrier (>=0.4.0a0,<0.5.0)", "towncrier (>=24.8.0,<24.9.0)"]
+fast = ["aiodns (>=3.0.0)", "uvloop (>=0.17.0) ; (sys_platform == \"darwin\" or sys_platform == \"linux\") and platform_python_implementation != \"PyPy\" and python_version < \"3.13\"", "uvloop (>=0.21.0) ; (sys_platform == \"darwin\" or sys_platform == \"linux\") and platform_python_implementation != \"PyPy\" and python_version >= \"3.13\""]
+i18n = ["babel (>=2.13.0,<3)"]
+mongo = ["motor (>=3.3.2,<3.8)", "pymongo (>4.5,<4.16)"]
+proxy = ["aiohttp-socks (>=0.10.1,<0.11.0)"]
+redis = ["redis[hiredis] (>=6.2.0,<8)"]
+signature = ["cryptography (>=46.0.0)"]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 description = "Happy Eyeballs for asyncio"
@@ -1525,6 +1555,21 @@ files = [
 ]
 
 [[package]]
+name = "magic-filter"
+version = "1.0.12"
+description = ""
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "magic_filter-1.0.12-py3-none-any.whl", hash = "sha256:e5929e544f310c2b1f154318db8c5cdf544dd658efa998172acd2e4ba0f6c6a6"},
+    {file = "magic_filter-1.0.12.tar.gz", hash = "sha256:4751d0b579a5045d1dc250625c4c508c18c3def5ea6afaf3957cb4530d03f7f9"},
+]
+
+[package.extras]
+dev = ["black (>=22.8.0,<22.9.0)", "flake8 (>=5.0.4,<5.1.0)", "isort (>=5.11.5,<5.12.0)", "mypy (>=1.4.1,<1.5.0)", "pre-commit (>=2.20.0,<2.21.0)", "pytest (>=7.1.3,<7.2.0)", "pytest-cov (>=3.0.0,<3.1.0)", "pytest-html (>=3.1.1,<3.2.0)", "types-setuptools (>=65.3.0,<65.4.0)"]
+
+[[package]]
 name = "mako"
 version = "1.3.10"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
@@ -2501,31 +2546,6 @@ files = [
 
 [package.extras]
 windows-terminal = ["colorama (>=0.4.6)"]
-
-[[package]]
-name = "pytelegrambotapi"
-version = "4.30.0"
-description = "Python Telegram bot API."
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "pytelegrambotapi-4.30.0-py3-none-any.whl", hash = "sha256:cef0a61cfb21a320c597984985a7f417e35e67807f40cfc43bcb9ad3ebe944e6"},
-    {file = "pytelegrambotapi-4.30.0.tar.gz", hash = "sha256:0bbfe244e008c9e7fb9a5c1ddffb1d99b28089387f0706d4a8aad496feccda06"},
-]
-
-[package.dependencies]
-requests = "*"
-
-[package.extras]
-coloredlogs = ["coloredlogs"]
-fastapi = ["fastapi"]
-json = ["ujson"]
-pil = ["pillow"]
-psutil = ["psutil"]
-redis = ["redis (>=3.4.1)"]
-uvicorn = ["uvicorn"]
-watchdog = ["watchdog"]
 
 [[package]]
 name = "pytest"
@@ -3636,4 +3656,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.13"
-content-hash = "d1d493f9d383cbebdcca1e5c5ffa3ada2f6b94603c1daa5b240cf6c9dac7b080"
+content-hash = "11af986b29deec3074360d2714e236df70f427ee6d556f68a5f578cc18ad121e"
