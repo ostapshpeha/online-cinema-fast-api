@@ -24,4 +24,4 @@ celery_app.conf.beat_schedule = {
 }
 
 # Auto-discovery of tasks in src/tasks
-celery_app.autodiscover_tasks(["src"])
+celery_app.autodiscover_tasks(["src.tasks"])

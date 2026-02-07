@@ -62,4 +62,5 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str | None = Field(default=None)
     TELEGRAM_ADMIN_CHAT_ID: int | None = Field(default=None)
 
+
 settings = Settings()
