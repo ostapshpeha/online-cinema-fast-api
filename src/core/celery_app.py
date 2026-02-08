@@ -4,7 +4,12 @@ from celery.schedules import crontab
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", os.getenv("REDIS_URL"))
 
-celery_app = Celery("cinema_tasks", broker=CELERY_BROKER_URL, backend=CELERY_BROKER_URL)
+celery_app = Celery(
+    "cinema_tasks",
+    broker=CELERY_BROKER_URL,
+    backend=CELERY_BROKER_URL,
+    include=["src.tasks.auth", "src.tasks.email"],
+)
 
 celery_app.conf.update(
     task_serializer="json",
