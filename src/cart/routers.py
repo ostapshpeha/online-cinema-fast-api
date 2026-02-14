@@ -1,6 +1,6 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import require_role, get_current_user
@@ -12,7 +12,7 @@ from src.cart.exceptions import (
     MovieNotInCartException,
     CartIsEmptyException,
 )
-from src.cart.schemas import MessageSchema, MovieReadSchema
+from src.cart.schemas import MessageSchema, MovieReadSchema, CartItemCreate
 from src.core.database import get_async_session
 from src.cart.crud import (
     add_movie_to_cart,
@@ -32,20 +32,20 @@ moderator_permission = Depends(
 
 
 @router.post(
-    "/movies/{movie_id}",
-    status_code=201,
+    "/movies/",
+    status_code=status.HTTP_201_CREATED,
     response_model=MessageSchema,
     dependencies=[user_permission],
 )
 async def add_movie_to_user_cart(
-    movie_id: int,
+    cart_item: CartItemCreate,
     db: Annotated[AsyncSession, Depends(get_async_session)],
     current_user: User = Depends(get_current_user),
 ):
     try:
         await add_movie_to_cart(
             db=db,
-            movie_id=movie_id,
+            movie_id=cart_item.movie_id,
             user_id=current_user.id,
         )
     except (MovieAlreadyPurchasedException, MovieAlreadyInCartException) as e:
@@ -54,7 +54,10 @@ async def add_movie_to_user_cart(
 
 
 @router.delete(
-    "/movies/{movie_id}", response_model=MessageSchema, dependencies=[user_permission]
+    "/movies/{movie_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=MessageSchema,
+    dependencies=[user_permission]
 )
 async def remove_movie_from_cart(
     movie_id: int,
@@ -68,7 +71,10 @@ async def remove_movie_from_cart(
     return MessageSchema(message="Movie successfully deleted")
 
 
-@router.delete("/movies/", response_model=MessageSchema, dependencies=[user_permission])
+@router.delete("/movies/",
+               response_model=MessageSchema,
+               dependencies=[user_permission],
+               status_code=status.HTTP_204_NO_CONTENT)
 async def remove_all_movies_from_cart(
     db: Annotated[AsyncSession, Depends(get_async_session)],
     current_user: User = Depends(get_current_user),
@@ -81,7 +87,10 @@ async def remove_all_movies_from_cart(
 
 
 @router.get(
-    "/{cart_id}", response_model=List[MovieReadSchema], dependencies=[user_permission]
+    "/{cart_id}",
+    response_model=List[MovieReadSchema],
+    dependencies=[user_permission],
+    status_code=status.HTTP_200_OK
 )
 async def select_all_movies(
     cart_id: int, db: Annotated[AsyncSession, Depends(get_async_session)]
