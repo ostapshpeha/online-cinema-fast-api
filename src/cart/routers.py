@@ -57,7 +57,7 @@ async def add_movie_to_user_cart(
     "/movies/{movie_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=MessageSchema,
-    dependencies=[user_permission]
+    dependencies=[user_permission],
 )
 async def remove_movie_from_cart(
     movie_id: int,
@@ -71,10 +71,12 @@ async def remove_movie_from_cart(
     return MessageSchema(message="Movie successfully deleted")
 
 
-@router.delete("/movies/",
-               response_model=MessageSchema,
-               dependencies=[user_permission],
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/movies/",
+    response_model=MessageSchema,
+    dependencies=[user_permission],
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def remove_all_movies_from_cart(
     db: Annotated[AsyncSession, Depends(get_async_session)],
     current_user: User = Depends(get_current_user),
@@ -90,7 +92,7 @@ async def remove_all_movies_from_cart(
     "/{cart_id}",
     response_model=List[MovieReadSchema],
     dependencies=[user_permission],
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
 async def select_all_movies(
     cart_id: int, db: Annotated[AsyncSession, Depends(get_async_session)]
