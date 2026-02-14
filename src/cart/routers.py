@@ -56,7 +56,6 @@ async def add_movie_to_user_cart(
 @router.delete(
     "/movies/{movie_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    response_model=MessageSchema,
     dependencies=[user_permission],
 )
 async def remove_movie_from_cart(
@@ -71,7 +70,6 @@ async def remove_movie_from_cart(
 
 @router.delete(
     "/movies/",
-    response_model=MessageSchema,
     dependencies=[user_permission],
     status_code=status.HTTP_204_NO_CONTENT,
 )
