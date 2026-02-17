@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import get_current_user
-from src.auth.schemas import CurrentUserDTO
+from src.auth.models import User
 from src.core.database import get_async_session
 from src.interactions.models import (
     Favorite,
@@ -16,12 +16,20 @@ from src.interactions.models import (
     NotificationType,
     Rating,
 )
+from src.interactions.repository import (
+    get_comment_or_404,
+    get_movie_or_404,
+    set_rating,
+    set_reaction,
+)
 from src.interactions.schemas import (
     FavoritesListOut,
+    FavoriteIn,
     MessageOut,
+    ReactionSetIn,
     ReactionSetOut,
     ReactionsSummaryOut,
-    CommentCreate,
+    CommentCreateIn,
     CommentOut,
     CommentsListOut,
     NotificationOut,
@@ -35,44 +43,23 @@ from src.movies.models import Movie
 router = APIRouter(prefix="/interactions", tags=["Interactions"])
 
 
-async def _get_movie_or_404(session: AsyncSession, movie_id: int) -> Movie:
-    result = await session.execute(select(Movie).where(Movie.id == movie_id))
-    movie = result.scalar_one_or_none()
-    if movie is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Movie not found"
-        )
-    return movie
-
-
-async def _get_comment_or_404(session: AsyncSession, comment_id: int) -> Comment:
-    result = await session.execute(select(Comment).where(Comment.id == comment_id))
-    comment = result.scalar_one_or_none()
-    if comment is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Comment not found",
-        )
-    return comment
-
-
 @router.post(
-    "/favorites/{movie_id}",
+    "/favorites/",
     response_model=MessageOut,
     status_code=status.HTTP_201_CREATED,
     summary="Add movie to favorites",
 )
 async def add_to_favorites(
-    movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    payload: FavoriteIn,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
-    await _get_movie_or_404(session, movie_id)
+    await get_movie_or_404(session, payload.movie_id)
 
     result = await session.execute(
         select(Favorite).where(
             Favorite.user_id == current_user.id,
-            Favorite.movie_id == movie_id,
+            Favorite.movie_id == payload.movie_id,
         )
     )
     existing = result.scalar_one_or_none()
@@ -81,7 +68,7 @@ async def add_to_favorites(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Already in favorites"
         )
 
-    fav = Favorite(user_id=current_user.id, movie_id=movie_id)
+    fav = Favorite(user_id=current_user.id, movie_id=payload.movie_id)
     session.add(fav)
     await session.commit()
 
@@ -89,13 +76,13 @@ async def add_to_favorites(
 
 
 @router.delete(
-    "/favorites/{movie_id}",
+    "/favorites/{movie_id}/",
     response_model=MessageOut,
     summary="Remove movie from favorites",
 )
 async def remove_from_favorites(
     movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
     result = await session.execute(
@@ -116,13 +103,13 @@ async def remove_from_favorites(
 
 
 @router.get(
-    "/favorites",
+    "/favorites/",
     response_model=FavoritesListOut,
     summary="List favorites (with optional search)",
 )
 async def list_favorites(
     q: str | None = Query(default=None, description="Search by movie name"),
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> FavoritesListOut:
     stmt = (
@@ -141,79 +128,37 @@ async def list_favorites(
     return FavoritesListOut(items=movies)
 
 
-async def _set_reaction(
-    session: AsyncSession,
-    *,
-    user_id: int,
-    movie_id: int,
-    reaction: ReactionType,
-) -> None:
-    result = await session.execute(
-        select(MovieReaction).where(
-            MovieReaction.user_id == user_id,
-            MovieReaction.movie_id == movie_id,
-        )
-    )
-    existing = result.scalar_one_or_none()
-
-    if existing:
-        existing.reaction = reaction
-    else:
-        session.add(
-            MovieReaction(user_id=user_id, movie_id=movie_id, reaction=reaction)
-        )
-
-    await session.commit()
-
-
 @router.post(
-    "/movies/{movie_id}/like",
+    "/movies/reaction/",
     response_model=ReactionSetOut,
-    summary="Like a movie",
+    summary="Set my reaction (LIKE/DISLIKE) for a movie",
 )
-async def like_movie(
-    movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+async def set_movie_reaction(
+    payload: ReactionSetIn,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> ReactionSetOut:
-    await _get_movie_or_404(session, movie_id)
-    await _set_reaction(
+    await get_movie_or_404(session, payload.movie_id)
+    reaction = (
+        ReactionType.LIKE if payload.reaction == "LIKE" else ReactionType.DISLIKE
+    )
+    await set_reaction(
         session,
         user_id=current_user.id,
-        movie_id=movie_id,
-        reaction=ReactionType.LIKE,
+        movie_id=payload.movie_id,
+        reaction=reaction,
     )
-    return ReactionSetOut(movie_id=movie_id, reaction="LIKE")
-
-
-@router.post(
-    "/movies/{movie_id}/dislike",
-    response_model=ReactionSetOut,
-    summary="Dislike a movie",
-)
-async def dislike_movie(
-    movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
-    session: AsyncSession = Depends(get_async_session),
-) -> ReactionSetOut:
-    await _get_movie_or_404(session, movie_id)
-    await _set_reaction(
-        session,
-        user_id=current_user.id,
-        movie_id=movie_id,
-        reaction=ReactionType.DISLIKE,
-    )
-    return ReactionSetOut(movie_id=movie_id, reaction="DISLIKE")
+    return ReactionSetOut(movie_id=payload.movie_id, reaction=payload.reaction)
 
 
 @router.delete(
-    "/movies/{movie_id}/reaction",
+    "/movies/{movie_id}/reaction/",
     response_model=MessageOut,
     summary="Remove my reaction from a movie",
 )
 async def remove_reaction(
     movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
     result = await session.execute(
@@ -235,16 +180,16 @@ async def remove_reaction(
 
 
 @router.get(
-    "/movies/{movie_id}/reactions",
+    "/movies/{movie_id}/reactions/",
     response_model=ReactionsSummaryOut,
     summary="Get reactions summary for a movie",
 )
 async def get_reactions_summary(
     movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> ReactionsSummaryOut:
-    await _get_movie_or_404(session, movie_id)
+    await get_movie_or_404(session, movie_id)
 
     likes_stmt = (
         select(func.count())
@@ -280,61 +225,37 @@ async def get_reactions_summary(
     )
 
 
-async def _set_rating(
-    session: AsyncSession,
-    *,
-    user_id: int,
-    movie_id: int,
-    score: int,
-) -> None:
-    result = await session.execute(
-        select(Rating).where(
-            Rating.user_id == user_id,
-            Rating.movie_id == movie_id,
-        )
-    )
-    existing = result.scalar_one_or_none()
-
-    if existing:
-        existing.score = score
-    else:
-        session.add(Rating(user_id=user_id, movie_id=movie_id, score=score))
-
-    await session.commit()
-
-
 @router.post(
-    "/movies/{movie_id}/rating",
+    "/movies/rating/",
     response_model=RatingSetOut,
     summary="Set or update my rating for a movie (1-10)",
 )
-async def set_rating(
-    movie_id: int,
+async def set_movie_rating(
     payload: RatingSetIn,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> RatingSetOut:
-    await _get_movie_or_404(session, movie_id)
-    await _set_rating(
+    await get_movie_or_404(session, payload.movie_id)
+    await set_rating(
         session,
         user_id=current_user.id,
-        movie_id=movie_id,
+        movie_id=payload.movie_id,
         score=payload.score,
     )
-    return RatingSetOut(movie_id=movie_id, score=payload.score)
+    return RatingSetOut(movie_id=payload.movie_id, score=payload.score)
 
 
 @router.delete(
-    "/movies/{movie_id}/rating",
+    "/movies/{movie_id}/rating/",
     response_model=MessageOut,
     summary="Remove my rating for a movie",
 )
 async def remove_rating(
     movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
-    await _get_movie_or_404(session, movie_id)
+    await get_movie_or_404(session, movie_id)
 
     result = await session.execute(
         select(Rating).where(
@@ -355,16 +276,16 @@ async def remove_rating(
 
 
 @router.get(
-    "/movies/{movie_id}/rating",
+    "/movies/{movie_id}/rating/",
     response_model=RatingSummaryOut,
     summary="Get rating summary for a movie",
 )
 async def get_rating_summary(
     movie_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> RatingSummaryOut:
-    await _get_movie_or_404(session, movie_id)
+    await get_movie_or_404(session, movie_id)
 
     avg_stmt = select(func.avg(Rating.score)).where(Rating.movie_id == movie_id)
     votes_stmt = (
@@ -389,23 +310,22 @@ async def get_rating_summary(
 
 
 @router.post(
-    "/movies/{movie_id}/comments",
+    "/movies/comments/",
     response_model=CommentOut,
     status_code=status.HTTP_201_CREATED,
     summary="Create comment for a movie (flat list, but parent_id allowed)",
 )
 async def create_comment(
-    movie_id: int,
-    payload: CommentCreate,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    payload: CommentCreateIn,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> CommentOut:
-    await _get_movie_or_404(session, movie_id)
+    await get_movie_or_404(session, payload.movie_id)
 
     parent: Comment | None = None
     if payload.parent_id is not None:
-        parent = await _get_comment_or_404(session, payload.parent_id)
-        if parent.movie_id != movie_id:
+        parent = await get_comment_or_404(session, payload.parent_id)
+        if parent.movie_id != payload.movie_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Parent comment belongs to another movie",
@@ -413,7 +333,7 @@ async def create_comment(
 
     comment = Comment(
         user_id=current_user.id,
-        movie_id=movie_id,
+        movie_id=payload.movie_id,
         parent_id=payload.parent_id,
         text=payload.text,
     )
@@ -435,7 +355,7 @@ async def create_comment(
 
 
 @router.get(
-    "/movies/{movie_id}/comments",
+    "/movies/{movie_id}/comments/",
     response_model=CommentsListOut,
     summary="List comments for a movie (flat)",
 )
@@ -445,7 +365,7 @@ async def list_comments(
     offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_async_session),
 ) -> CommentsListOut:
-    await _get_movie_or_404(session, movie_id)
+    await get_movie_or_404(session, movie_id)
 
     stmt = (
         select(Comment)
@@ -461,16 +381,16 @@ async def list_comments(
 
 
 @router.delete(
-    "/comments/{comment_id}",
+    "/comments/{comment_id}/",
     response_model=MessageOut,
     summary="Delete my comment",
 )
 async def delete_comment(
     comment_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
-    comment = await _get_comment_or_404(session, comment_id)
+    comment = await get_comment_or_404(session, comment_id)
 
     if comment.user_id != current_user.id:
         raise HTTPException(
@@ -484,14 +404,14 @@ async def delete_comment(
 
 
 @router.get(
-    "/notifications",
+    "/notifications/",
     response_model=NotificationsListOut,
     summary="List my notifications",
 )
 async def list_notifications(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> NotificationsListOut:
     stmt = (
@@ -511,13 +431,13 @@ async def list_notifications(
 
 
 @router.patch(
-    "/notifications/{notification_id}/read",
+    "/notifications/{notification_id}/read/",
     response_model=MessageOut,
     summary="Mark notification as read",
 )
 async def mark_notification_read(
     notification_id: int,
-    current_user: CurrentUserDTO = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
     result = await session.execute(
