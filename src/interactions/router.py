@@ -1,3 +1,13 @@
+"""
+Interactions routes.
+
+This module contains endpoints related to user interactions with movies:
+favorites, reactions (like/dislike), ratings, comments, and notifications.
+
+All endpoints work with async SQLAlchemy sessions and require authorization
+where it is needed.
+"""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -54,6 +64,12 @@ async def add_to_favorites(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
+    """
+    Add a movie to the current user's favorites.
+
+    Expects movie_id in request body.
+    Returns 400 if the movie is already in favorites.
+    """
     await get_movie_or_404(session, payload.movie_id)
 
     result = await session.execute(
@@ -65,7 +81,8 @@ async def add_to_favorites(
     existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Already in favorites"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Already in favorites"
         )
 
     fav = Favorite(user_id=current_user.id, movie_id=payload.movie_id)
@@ -85,6 +102,11 @@ async def remove_from_favorites(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
+    """
+    Remove a movie from the current user's favorites.
+
+    Returns 404 if the movie is not in favorites.
+    """
     result = await session.execute(
         select(Favorite).where(
             Favorite.user_id == current_user.id,
@@ -112,6 +134,11 @@ async def list_favorites(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> FavoritesListOut:
+    """
+    List the current user's favorite movies.
+
+    Supports optional search by movie name using query param `q`.
+    """
     stmt = (
         select(Movie)
         .join(Favorite, Favorite.movie_id == Movie.id)
@@ -138,6 +165,12 @@ async def set_movie_reaction(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> ReactionSetOut:
+    """
+    Set or update current user's reaction for a movie.
+
+    Accepts movie_id and reaction in request body.
+    Reaction can be LIKE or DISLIKE.
+    """
     await get_movie_or_404(session, payload.movie_id)
     reaction = (
         ReactionType.LIKE if payload.reaction == "LIKE" else ReactionType.DISLIKE
@@ -161,6 +194,11 @@ async def remove_reaction(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
+    """
+    Remove current user's reaction from a movie.
+
+    Returns 404 if there is no reaction to remove.
+    """
     result = await session.execute(
         select(MovieReaction).where(
             MovieReaction.user_id == current_user.id,
@@ -189,6 +227,11 @@ async def get_reactions_summary(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> ReactionsSummaryOut:
+    """
+    Get reactions summary for a movie.
+
+    Returns total likes, dislikes, and current user's reaction (if exists).
+    """
     await get_movie_or_404(session, movie_id)
 
     likes_stmt = (
@@ -235,6 +278,12 @@ async def set_movie_rating(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> RatingSetOut:
+    """
+    Set or update current user's rating for a movie.
+
+    Accepts movie_id and score in request body.
+    Score is expected to be in range 1..10 (validated by schema/DB constraint).
+    """
     await get_movie_or_404(session, payload.movie_id)
     await set_rating(
         session,
@@ -255,6 +304,11 @@ async def remove_rating(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
+    """
+    Remove current user's rating for a movie.
+
+    Returns 404 if there is no rating to remove.
+    """
     await get_movie_or_404(session, movie_id)
 
     result = await session.execute(
@@ -285,6 +339,11 @@ async def get_rating_summary(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> RatingSummaryOut:
+    """
+    Get rating summary for a movie.
+
+    Returns average score, number of votes, and current user's score (if exists).
+    """
     await get_movie_or_404(session, movie_id)
 
     avg_stmt = select(func.avg(Rating.score)).where(Rating.movie_id == movie_id)
@@ -320,6 +379,14 @@ async def create_comment(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> CommentOut:
+    """
+    Create a comment for a movie.
+
+    Works as a flat list, but allows `parent_id` to link a comment to another comment.
+    If parent_id is provided, it must belong to the same movie.
+
+    Creates notification for the parent comment author (if not self-reply).
+    """
     await get_movie_or_404(session, payload.movie_id)
 
     parent: Comment | None = None
@@ -365,6 +432,12 @@ async def list_comments(
     offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_async_session),
 ) -> CommentsListOut:
+    """
+    List comments for a movie.
+
+    Returns a flat list ordered by newest first.
+    Supports pagination via limit/offset.
+    """
     await get_movie_or_404(session, movie_id)
 
     stmt = (
@@ -390,6 +463,11 @@ async def delete_comment(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
+    """
+    Delete current user's comment.
+
+    Returns 403 if the comment belongs to another user.
+    """
     comment = await get_comment_or_404(session, comment_id)
 
     if comment.user_id != current_user.id:
@@ -414,6 +492,12 @@ async def list_notifications(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> NotificationsListOut:
+    """
+    List notifications for the current user.
+
+    Returns notifications ordered by newest first.
+    Supports pagination via limit/offset.
+    """
     stmt = (
         select(Notification)
         .where(Notification.recipient_user_id == current_user.id)
@@ -440,6 +524,12 @@ async def mark_notification_read(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> MessageOut:
+    """
+    Mark a notification as read.
+
+    Only the recipient user can mark their notification as read.
+    Returns 404 if notification does not exist for current user.
+    """
     result = await session.execute(
         select(Notification).where(
             Notification.id == notification_id,
