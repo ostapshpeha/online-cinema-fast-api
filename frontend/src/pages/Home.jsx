@@ -31,7 +31,7 @@ function GuestHero() {
           <span className="text-red-600">Anytime.</span>
         </h1>
         <p className="text-[#9999aa] text-lg">
-          Thousands of movies. One subscription. Sign in to start watching.
+          Thousands of movies. Sign in to start.
         </p>
       </div>
 
