@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +20,7 @@ moderator_permission = Depends(
 )
 
 
-@router.get("", response_model=List[schemas.MovieRead])
+@router.get("", response_model=schemas.MovieListResponse)
 async def read_movies(
     skip: int = 0,
     limit: int = 20,
@@ -35,11 +35,11 @@ async def read_movies(
     """
     Retrieve a list of movies with filtering, search, sorting, and pagination.
     """
-
     movies = await crud.get_movies(
         db, skip=skip, limit=limit, search=search, sort_by=sort_by, genre_id=genre_id
     )
-    return movies
+    total = await crud.get_movies_count(db, search=search, genre_id=genre_id)
+    return {"total": total, "items": movies}
 
 
 @router.get("/{movie_id}/", response_model=schemas.MovieRead)
