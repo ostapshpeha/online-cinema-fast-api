@@ -16,6 +16,8 @@ const Cart           = lazy(() => import('./pages/Cart'))
 const Orders         = lazy(() => import('./pages/Orders'))
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
 const PaymentCancel  = lazy(() => import('./pages/PaymentCancel'))
+const Notifications  = lazy(() => import('./pages/Notifications'))
+const Admin          = lazy(() => import('./pages/Admin'))
 
 // ─── shell ────────────────────────────────────────────────────────────────────
 function AppShell({ cartCount, hasUnread }) {
@@ -57,7 +59,7 @@ export default function App() {
 
           {/* Protected */}
           <Route path="profile" element={
-            <ProtectedRoute><Profile setHasUnread={setHasUnread} /></ProtectedRoute>
+            <ProtectedRoute><Profile /></ProtectedRoute>
           } />
           <Route path="cart" element={
             <ProtectedRoute><Cart setCartCount={setCartCount} /></ProtectedRoute>
@@ -70,6 +72,12 @@ export default function App() {
           } />
           <Route path="payment/cancel" element={
             <ProtectedRoute><PaymentCancel /></ProtectedRoute>
+          } />
+          <Route path="notifications" element={
+            <ProtectedRoute><Notifications setHasUnread={setHasUnread} /></ProtectedRoute>
+          } />
+          <Route path="admin" element={
+            <ProtectedRoute><Admin /></ProtectedRoute>
           } />
         </Route>
       </Routes>

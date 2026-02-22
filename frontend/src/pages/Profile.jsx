@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext'
 import {
   getProfile, createProfile, updateProfile, uploadAvatar, changePassword,
 } from '../api/auth'
-import { getNotifications, markNotificationRead } from '../api/interactions'
 import Spinner from '../components/ui/Spinner'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -54,14 +53,6 @@ function Field({ label, children }) {
 const inputCls = `w-full bg-[#1a1a24] border border-[#2a2a38] rounded-xl px-4 py-2.5
   text-sm text-[#f1f1f1] placeholder-[#55556a]
   focus:outline-none focus:border-red-600 transition-colors`
-
-// ─── notification helpers ─────────────────────────────────────────────────────
-
-function notifLabel(type) {
-  if (type === 'COMMENT_REPLY') return 'replied to your comment'
-  if (type === 'COMMENT_LIKE')  return 'liked your comment'
-  return type.toLowerCase().replace(/_/g, ' ')
-}
 
 // ─── avatar section ───────────────────────────────────────────────────────────
 
@@ -337,104 +328,9 @@ function ChangePasswordForm() {
   )
 }
 
-// ─── notifications ────────────────────────────────────────────────────────────
-
-function NotificationsSection({ setHasUnread }) {
-  const [items,   setItems]   = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    getNotifications({ limit: 50 })
-      .then(({ data }) => {
-        const list = data.items ?? []
-        setItems(list)
-        setHasUnread(list.some((n) => !n.is_read))
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [setHasUnread])
-
-  const handleMarkRead = async (id) => {
-    try {
-      await markNotificationRead(id)
-      setItems((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n))
-      setHasUnread((prev) => {
-        // recheck after update
-        return items.some((n) => n.id !== id && !n.is_read)
-      })
-    } catch {}
-  }
-
-  const markAllRead = async () => {
-    const unread = items.filter((n) => !n.is_read)
-    await Promise.allSettled(unread.map((n) => markNotificationRead(n.id)))
-    setItems((prev) => prev.map((n) => ({ ...n, is_read: true })))
-    setHasUnread(false)
-  }
-
-  if (loading) return <Spinner className="py-8" />
-
-  const unreadCount = items.filter((n) => !n.is_read).length
-
-  return (
-    <div className="space-y-3">
-      {items.length > 0 && unreadCount > 0 && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-[#55556a]">
-            {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-          </p>
-          <button onClick={markAllRead}
-            className="text-xs text-red-500 hover:text-red-400 transition-colors">
-            Mark all as read
-          </button>
-        </div>
-      )}
-
-      {items.length === 0 && (
-        <p className="text-sm text-[#55556a] py-4 text-center">No notifications yet.</p>
-      )}
-
-      <div className="space-y-2">
-        {items.map((n) => (
-          <div key={n.id}
-            className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3
-              transition-colors
-              ${n.is_read
-                ? 'border-[#1e1e28] bg-[#13131a]'
-                : 'border-[#2a2a38] bg-[#1a1a24]'}`}>
-            <div className="flex items-start gap-3 min-w-0">
-              {/* Unread dot */}
-              <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0
-                ${n.is_read ? 'bg-transparent' : 'bg-red-500'}`} />
-              <div className="min-w-0">
-                <p className="text-sm text-[#f1f1f1]">
-                  <span className="text-[#9999aa]">User #{n.actor_user_id ?? '?'}</span>
-                  {' '}{notifLabel(n.type)}
-                </p>
-                <p className="text-[11px] text-[#55556a] mt-0.5">
-                  {new Date(n.created_at).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            </div>
-            {!n.is_read && (
-              <button onClick={() => handleMarkRead(n.id)}
-                className="shrink-0 text-[11px] text-[#55556a] hover:text-[#9999aa]
-                  transition-colors whitespace-nowrap">
-                Mark read
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── main page ────────────────────────────────────────────────────────────────
 
-export default function Profile({ setHasUnread }) {
+export default function Profile() {
   const { user } = useAuth()
   const [profile, setProfile]             = useState(null)
   const [profileExists, setProfileExists] = useState(false)
@@ -484,11 +380,6 @@ export default function Profile({ setHasUnread }) {
       {/* Change password */}
       <SectionCard title="Security">
         <ChangePasswordForm />
-      </SectionCard>
-
-      {/* Notifications */}
-      <SectionCard title="Notifications" id="notifications">
-        <NotificationsSection setHasUnread={setHasUnread ?? (() => {})} />
       </SectionCard>
 
     </div>

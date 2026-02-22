@@ -30,7 +30,13 @@ export const deleteMovie = (movieId) =>
 export const getGenres = () =>
   client.get('/genres')
 
+export const createGenre = (data) =>
+  client.post('/genres', data)
+
 // ─── stars ────────────────────────────────────────────────────────────────────
 
 export const getStars = (params = {}) =>
   client.get('/stars', { params })
+
+export const createStar = (data) =>
+  client.post('/stars', data)

@@ -40,7 +40,7 @@ const BellIcon = ({ hasUnread }) => (
 )
 
 export default function Navbar({ cartCount = 0, hasUnread = false }) {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, isModerator, logout } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [query, setQuery]     = useState(searchParams.get('search') || '')
@@ -121,7 +121,7 @@ export default function Navbar({ cartCount = 0, hasUnread = false }) {
               </Link>
 
               {/* Notifications */}
-              <Link to="/profile#notifications"
+              <Link to="/notifications"
                 className="p-2 text-[#9999aa] hover:text-white transition-colors rounded-lg hover:bg-white/5">
                 <BellIcon hasUnread={hasUnread} />
               </Link>
@@ -145,6 +145,9 @@ export default function Navbar({ cartCount = 0, hasUnread = false }) {
                     <div className="py-1">
                       <MenuLink to="/profile" onClick={() => setMenuOpen(false)}>Profile</MenuLink>
                       <MenuLink to="/orders"  onClick={() => setMenuOpen(false)}>My Orders</MenuLink>
+                      {isModerator && (
+                        <MenuLink to="/admin" onClick={() => setMenuOpen(false)}>Admin Panel</MenuLink>
+                      )}
                     </div>
                     <div className="py-1 border-t border-[#2a2a38]">
                       <button onClick={handleLogout}
