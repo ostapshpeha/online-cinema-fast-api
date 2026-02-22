@@ -112,6 +112,13 @@ export default function Navbar({ cartCount = 0, hasUnread = false }) {
             Movies
           </Link>
 
+          {isAuthenticated && (
+            <Link to="/orders"
+              className="hidden sm:block px-3 py-1.5 text-sm text-[#9999aa] hover:text-white transition-colors rounded-lg hover:bg-white/5">
+              Orders
+            </Link>
+          )}
+
           {isAuthenticated ? (
             <>
               {/* Cart */}
