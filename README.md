@@ -201,3 +201,16 @@ docker exec -it cinema_app alembic revision --autogenerate -m "description"
 # Check current state
 docker exec -it cinema_app alembic current
 ```
+
+## Screenshots
+
+![Screenshot 1](media/Screenshot_13.png)
+![Screenshot 2](media/Screenshot_14.png)
+![Screenshot 3](media/Screenshot_15.png)
+![Screenshot 4](media/Screenshot_16.png)
+![Screenshot 5](media/Screenshot_17.png)
+![Screenshot 6](media/Screenshot_18.png)
+
+## Demo
+
+[![Worker Factory — Demo](https://img.youtube.com/vi/CLcsIiTjtX8/maxresdefault.jpg)](https://www.youtube.com/watch?v=CLcsIiTjtX8&t=1s)
