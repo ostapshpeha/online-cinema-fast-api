@@ -3,6 +3,7 @@
 A full-stack online cinema platform where users browse, purchase, and interact with films. Built with a production-grade async FastAPI backend and a React 19 frontend with a custom cinematic design system.
 
 ![Browse Films](media/img.png)
+![Login](media/img_6.png)
 
 ---
 
