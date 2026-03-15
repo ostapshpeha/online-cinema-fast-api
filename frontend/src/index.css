@@ -1,21 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Playfair+Display:ital@1&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-bg-base: #0a0a0f;
-  --color-bg-surface: #111118;
-  --color-bg-elevated: #1a1a24;
-  --color-bg-card: #16161f;
-  --color-border: #2a2a38;
+  --color-bg-base:     #070608;
+  --color-bg-surface:  #0e0d11;
+  --color-bg-elevated: #191721;
+  --color-bg-card:     #131220;
+  --color-border:      #252336;
 
-  --color-accent: #e50914;
-  --color-accent-hover: #f40612;
-  --color-accent-muted: #7f0509;
+  --color-accent:       #c8102e;
+  --color-accent-hover: #e5122e;
+  --color-accent-muted: #6b0818;
 
-  --color-gold: #f5c518;
+  --color-gold:     #c9a84c;
+  --color-gold-dim: #c9a84c26;
 
-  --color-text-primary: #f1f1f1;
-  --color-text-secondary: #9999aa;
-  --color-text-muted: #55556a;
+  --color-text-primary:   #f0eff4;
+  --color-text-secondary: #8e8da0;
+  --color-text-muted:     #4d4c60;
 }
 
 *,
@@ -30,43 +32,168 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--color-bg-base);
   color: var(--color-text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+
+  /* Layered gradient mesh — warm red top-left, cool purple bottom-right, dark center */
+  background-color: #070608;
+  background-image:
+    radial-gradient(ellipse at 12% 8%,  rgba(200, 16, 46, 0.10) 0%, transparent 42%),
+    radial-gradient(ellipse at 88% 90%, rgba(45,  30, 90, 0.12) 0%, transparent 42%),
+    radial-gradient(ellipse at 55% 48%, rgba(0,   0,  0, 0.55) 0%, transparent 70%),
+    /* Subtle dot grid */
+    radial-gradient(rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-size: auto, auto, auto, 28px 28px;
+  background-attachment: fixed;
+}
+
+/* Film grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
+}
+
+/* Edge vignette */
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at 50% 0%, transparent 45%, rgba(0,0,0,0.5) 100%);
 }
 
 /* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--color-bg-surface);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg-surface); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
 
-/* Focus ring */
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+a { color: inherit; text-decoration: none; }
+
+/* ── Keyframes ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shimmerSweep {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes bounceY {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(7px); }
+}
+
+@keyframes pulseRing {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 0.15; transform: scale(1.12); }
+}
+
+/* ── Utility animation classes ──────────────────────────────────── */
+.anim-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.65s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.anim-d1 { animation-delay: 0.05s; }
+.anim-d2 { animation-delay: 0.16s; }
+.anim-d3 { animation-delay: 0.28s; }
+.anim-d4 { animation-delay: 0.42s; }
+.anim-d5 { animation-delay: 0.58s; }
+
+.anim-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* ── Shimmer CTA button ─────────────────────────────────────────── */
+.btn-cinema {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    105deg,
+    var(--color-accent) 0%,
+    var(--color-accent) 30%,
+    #ff2040 50%,
+    var(--color-accent) 70%,
+    var(--color-accent) 100%
+  );
+  background-size: 200% auto;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 12px;
+  transition: background-position 0.5s ease, box-shadow 0.25s ease, transform 0.1s ease;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+.btn-cinema:hover {
+  background-position: right center;
+  box-shadow: 0 8px 32px rgba(200,16,46,0.5);
+}
+.btn-cinema:active { transform: scale(0.97); }
+
+/* ── Ghost button ───────────────────────────────────────────────── */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.18);
+}
+.btn-ghost:active { transform: scale(0.97); }
+
+/* ── Card hover lift ────────────────────────────────────────────── */
+.card-lift {
+  transition: transform 0.3s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.3s ease;
+}
+.card-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(200,16,46,0.25);
+}
+
+/* ── Bounce scroll indicator ────────────────────────────────────── */
+.anim-bounce { animation: bounceY 1.8s ease-in-out infinite; }

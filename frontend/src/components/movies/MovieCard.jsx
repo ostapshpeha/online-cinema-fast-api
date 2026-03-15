@@ -13,20 +13,9 @@ function posterStyle(id) {
   }
 }
 
-function StarIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969
-        0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755
-        1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1
-        1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
-  )
-}
-
 function CartPlusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
       <path strokeLinecap="round" strokeLinejoin="round"
         d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.4 5.6A1 1 0 006.6 20H19" />
       <circle cx="9" cy="21" r="1" /><circle cx="19" cy="21" r="1" />
@@ -38,12 +27,13 @@ function CartPlusIcon() {
 export default function MovieCard({ movie, onAdded }) {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [status, setStatus] = useState('idle') // idle | adding | added | error
+  const [status, setStatus] = useState('idle')
 
   const handleAddToCart = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
     if (!isAuthenticated) { navigate('/login'); return }
-    if (status === 'adding' || status === 'added') return
+    if (status === 'adding' || status === 'added' || status === 'owned') return
 
     setStatus('adding')
     try {
@@ -52,102 +42,142 @@ export default function MovieCard({ movie, onAdded }) {
       setStatus('added')
       window.dispatchEvent(new CustomEvent('cinemahub:cart', { detail: { delta: 1 } }))
       onAdded?.()
-      setTimeout(() => setStatus('idle'), 2000)
-    } catch {
-      setStatus('error')
-      setTimeout(() => setStatus('idle'), 2000)
+      setTimeout(() => setStatus('idle'), 2200)
+    } catch (err) {
+      const detail = err?.response?.data?.detail ?? ''
+      if (detail.toLowerCase().includes('already in cart')) {
+        // Backend has it — sync localStorage and show as added
+        addLocalCartItem(movie)
+        setStatus('added')
+        setTimeout(() => setStatus('idle'), 2200)
+      } else if (detail.toLowerCase().includes('already bought') || detail.toLowerCase().includes('already purchased')) {
+        setStatus('owned')
+        setTimeout(() => setStatus('idle'), 3000)
+      } else {
+        setStatus('error')
+        setTimeout(() => setStatus('idle'), 2200)
+      }
     }
   }
 
   const primaryGenre = movie.genres?.[0]?.name ?? ''
 
-  const btnLabel = { idle: 'Add to Cart', adding: 'Adding…', added: 'Added!', error: 'Failed' }
-  const btnClass = {
-    idle:   'bg-red-600 hover:bg-red-500 text-white',
-    adding: 'bg-red-800 text-red-300 cursor-wait',
-    added:  'bg-green-700 text-green-100 cursor-default',
-    error:  'bg-zinc-700 text-zinc-300 cursor-default',
+  const btnLabel = { idle: 'Add to Cart', adding: 'Adding…', added: 'Added!', owned: 'You own this', error: 'Failed' }
+
+  const btnStyle = {
+    idle:   { background: 'var(--color-accent)', color: '#fff' },
+    adding: { background: 'rgba(200,16,46,0.4)', color: 'rgba(255,255,255,0.6)', cursor: 'wait' },
+    added:  { background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)', cursor: 'default' },
+    owned:  { background: 'rgba(201,168,76,0.15)', color: 'var(--color-gold)', border: '1px solid rgba(201,168,76,0.25)', cursor: 'default' },
+    error:  { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)', cursor: 'default' },
   }
 
   return (
     <Link
       to={`/movies/${movie.id}`}
-      className="group relative flex flex-col rounded-xl overflow-hidden border border-[#2a2a38]
-        bg-[#16161f] hover:border-red-600/50 transition-all duration-300 hover:-translate-y-0.5
-        hover:shadow-2xl hover:shadow-red-950/30"
+      className="card-lift group relative flex flex-col rounded-xl overflow-hidden"
+      style={{ border: '1px solid var(--color-border)', background: 'var(--color-bg-card)' }}
     >
-      {/* Poster */}
-      <div
-        className="relative aspect-[2/3] overflow-hidden"
-        style={posterStyle(movie.id)}
-      >
-        {/* Certification badge */}
+      {/* ── Poster ── */}
+      <div className="relative overflow-hidden" style={{ aspectRatio: '2/3', ...posterStyle(movie.id) }}>
+
+        {/* Cert badge — top left */}
         {movie.certification && (
-          <span className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-bold
-            bg-black/60 text-[#9999aa] rounded border border-[#2a2a38] backdrop-blur-sm">
+          <span className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-bold rounded z-10"
+            style={{
+              background: 'rgba(0,0,0,0.65)',
+              color: 'var(--color-text-secondary)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(4px)',
+            }}>
             {movie.certification.name}
+          </span>
+        )}
+
+        {/* IMDb badge — top right */}
+        {movie.imdb && (
+          <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded z-10 text-[11px] font-semibold"
+            style={{
+              background: 'rgba(0,0,0,0.65)',
+              color: 'var(--color-gold)',
+              backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(201,168,76,0.2)',
+            }}>
+            ★ {movie.imdb.toFixed(1)}
           </span>
         )}
 
         {/* Genre watermark */}
         {primaryGenre && (
           <span className="absolute bottom-3 left-1/2 -translate-x-1/2
-            text-[11px] font-medium tracking-widest uppercase text-white/20 whitespace-nowrap">
+            text-[10px] font-medium tracking-widest uppercase whitespace-nowrap"
+            style={{ color: 'rgba(255,255,255,0.15)' }}>
             {primaryGenre}
           </span>
         )}
 
-        {/* Title overlay on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent
-          opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-          <p className="text-xs text-[#9999aa] line-clamp-3">{movie.description}</p>
+        {/* Hover overlay — slides up from bottom */}
+        <div className="absolute inset-0 flex flex-col justify-end p-3 transition-all duration-350"
+          style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 45%, transparent 100%)',
+            opacity: 0,
+          }}
+          ref={el => {
+            if (!el) return
+            const card = el.closest('.group')
+            if (!card) return
+            const show = () => { el.style.opacity = '1' }
+            const hide = () => { el.style.opacity = '0' }
+            card.addEventListener('mouseenter', show)
+            card.addEventListener('mouseleave', hide)
+          }}
+        >
+          <p className="text-xs line-clamp-4 leading-relaxed" style={{ color: 'rgba(240,239,244,0.8)' }}>
+            {movie.description}
+          </p>
         </div>
       </div>
 
-      {/* Body */}
+      {/* ── Info ── */}
       <div className="flex flex-col flex-1 p-3 gap-2">
-        {/* Genres */}
-        {movie.genres?.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {movie.genres.slice(0, 2).map((g) => (
-              <span key={g.id}
-                className="text-[10px] px-1.5 py-0.5 rounded bg-[#1a1a24] text-[#9999aa] border border-[#2a2a38]">
-                {g.name}
-              </span>
-            ))}
-          </div>
-        )}
 
         {/* Title */}
-        <h3 className="text-sm font-semibold text-[#f1f1f1] line-clamp-2 leading-snug group-hover:text-white transition-colors">
+        <h3 className="leading-tight line-clamp-2"
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '1.05rem',
+            letterSpacing: '0.03em',
+            color: 'var(--color-text-primary)',
+          }}>
           {movie.name}
         </h3>
 
-        {/* Meta row */}
-        <div className="flex items-center gap-2 text-xs text-[#55556a]">
+        {/* Meta */}
+        <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
           <span>{movie.year}</span>
-          <span>·</span>
+          <span style={{ opacity: 0.4 }}>·</span>
           <span>{movie.time}m</span>
-          {movie.imdb && (
+          {movie.genres?.length > 0 && (
             <>
-              <span>·</span>
-              <span className="flex items-center gap-0.5 text-[#f5c518]">
-                <StarIcon />
-                {movie.imdb.toFixed(1)}
-              </span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span style={{ color: 'var(--color-text-secondary)' }}>{movie.genres[0].name}</span>
             </>
           )}
         </div>
 
         {/* Price + CTA */}
         <div className="mt-auto pt-2 flex items-center justify-between gap-2">
-          <span className="text-base font-bold text-red-500">
+          <span className="font-bold" style={{ color: 'var(--color-gold)', fontSize: '0.95rem' }}>
             ${Number(movie.price).toFixed(2)}
           </span>
           <button
             onClick={handleAddToCart}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium
-              transition-all duration-200 ${btnClass[status]}`}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
+            style={{ ...btnStyle[status], transform: 'scale(1)' }}
+            onMouseEnter={e => { if (status === 'idle') e.currentTarget.style.boxShadow = '0 4px 16px rgba(200,16,46,0.45)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}
+            onMouseDown={e => { if (status === 'idle') e.currentTarget.style.transform = 'scale(0.95)' }}
+            onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)' }}
           >
             {status === 'idle' && <CartPlusIcon />}
             {btnLabel[status]}
